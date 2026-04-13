@@ -1,0 +1,4850 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق إعداد الدروس المتقدم</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    
+    <style>
+    /* =========== CSS الأساسي =========== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    transition: all 0.4s ease;
+}
+
+/* =========== نظام تثبيت الأشرطة (موحد ونظيف) =========== */
+
+/* الحاوية الرئيسية لمنطقة العرض */
+.lesson-area {
+    overflow-y: auto !important;
+    height: 100vh !important;
+    width: calc(100% - 75vw) !important;
+    margin-right: 75vw !important;
+    position: relative !important;
+    transition: all 0.4s ease;
+}
+
+.sidebar.hidden ~ .lesson-area {
+    width: 100% !important;
+    margin-right: 0 !important;
+}
+
+/* شريط عنوان الدرس - ثابت في الأعلى */
+.lesson-header-bar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10000 !important;
+    background: linear-gradient(90deg, #3498db, #2c3e50) !important;
+    color: white !important;
+    padding: 15px 30px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+/* شريط معلومات القسم والعنوان - ثابت تحت العنوان */
+.section-info-sticky {
+    position: sticky !important;
+    top: 73px !important; /* ارتفاع شريط العنوان + 3px */
+    z-index: 9999 !important;
+    background: white !important;
+    padding: 15px 30px !important;
+    margin: 0 0 20px 0 !important;
+    border-bottom: 2px solid #3498db !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    font-size: 1.2rem !important;
+    color: #2c3e50 !important;
+    font-weight: bold !important;
+    width: 100% !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.section-info-sticky i {
+    color: #3498db !important;
+    font-size: 1.3rem !important;
+}
+
+.section-name {
+    color: #2c3e50 !important;
+}
+
+.section-separator {
+    color: #7f8c8d !important;
+    margin: 0 5px !important;
+}
+
+.section-title-name {
+    color: #3498db !important;
+}
+
+/* حاوية المحتوى القابل للتمرير */
+.content-wrapper {
+    padding: 20px 30px !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* عناصر شريط العنوان */
+.date-display {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.lesson-title-display {
+    font-size: 1.4rem;
+    font-weight: bold;
+    text-align: center;
+    flex: 1;
+}
+
+.session-display {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* =========== الشريط الجانبي =========== */
+.sidebar {
+    width: 75vw;
+    background: linear-gradient(180deg, #2c3e50 0%, #1a2530 100%);
+    color: #fff;
+    padding: 20px;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    z-index: 9998;
+    position: fixed;
+    right: 0;
+    top: 0;
+    height: 100%;
+    transform: translateX(0);
+    transition: transform 0.4s ease;
+}
+
+.sidebar.hidden {
+    transform: translateX(100%);
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header h2 {
+    font-size: 1.6rem;
+    color: #3498db;
+    text-align: right;
+}
+
+.close-sidebar {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.close-sidebar:hover {
+    background: #c0392b;
+    transform: scale(1.1);
+}
+
+/* =========== زر فتح الشريط الجانبي =========== */
+.toggle-sidebar {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    background-color: #2c3e50 !important;
+    color: white !important;
+    border: none !important;
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.4rem !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+    z-index: 99999 !important;
+    transition: all 0.3s !important;
+}
+
+.toggle-sidebar.hidden {
+    display: none !important;
+}
+
+.toggle-sidebar:hover {
+    background-color: #3498db !important;
+    transform: scale(1.05) !important;
+}
+
+/* =========== قائمة العناصر الرئيسية =========== */
+.menu-items {
+    list-style: none;
+    text-align: right;
+}
+
+.menu-item {
+    margin-bottom: 12px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menu-item-header {
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-right: 4px solid transparent;
+    user-select: none;
+}
+
+.menu-item-header:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.menu-item-header.active {
+    background-color: rgba(52, 152, 219, 0.2);
+    border-right-color: #3498db;
+}
+
+.menu-item-header .item-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.menu-item-header i {
+    color: #3498db;
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+}
+
+.menu-item-header.active i {
+    color: #fff;
+}
+
+.menu-item-header .toggle-icon {
+    color: #aaa;
+    font-size: 0.9rem;
+    transition: transform 0.3s;
+}
+
+.menu-item-header.active .toggle-icon {
+    transform: rotate(180deg);
+    color: #fff;
+}
+
+.menu-item-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0 15px;
+}
+
+.menu-item-content.expanded {
+    max-height: 5000px;
+    padding: 15px;
+}
+
+.menu-item-content * {
+    pointer-events: auto !important;
+}
+
+/* =========== محتوى الصفحة =========== */
+.content-section {
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+.content-section.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========== تصميم بطاقات العرض =========== */
+.display-card {
+    width: 100% !important;
+    margin: 0 0 30px 0 !important;
+    padding: 30px !important;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    background: white;
+}
+
+.display-card h3 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #3498db;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: right;
+}
+
+.display-text {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #eee;
+    text-align: right;
+    line-height: 1.6;
+    font-size: 1.1rem;
+}
+
+/* =========== أنماط الأقسام الديناميكية =========== */
+.dynamic-section {
+    margin-bottom: 20px;
+}
+
+.section-title-input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: 2px solid #3498db;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    text-align: right;
+}
+
+.section-title-input:focus {
+    outline: none;
+    border-color: #2ecc71;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.section-title-input.hidden-input {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.section-title-input.hidden-input.visible {
+    display: block;
+}
+
+.add-title-btn {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 10px auto;
+    transition: all 0.3s;
+}
+
+.add-title-btn:hover {
+    background: linear-gradient(135deg, #27ae60, #219653);
+    transform: scale(1.1);
+}
+
+/* =========== النماذج =========== */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #ddd;
+    font-size: 0.9rem;
+    text-align: right;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #555;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 1rem;
+    text-align: right;
+    direction: rtl;
+    transition: all 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* =========== الأزرار =========== */
+.btn {
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background: #2ecc71;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #27ae60;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.btn-add {
+    width: 100%;
+    margin-top: 10px;
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    color: white;
+}
+
+.btn-add:hover {
+    background: linear-gradient(135deg, #8e44ad, #7d3c98);
+}
+
+.final-save-btn {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.final-save-btn:hover {
+    background: linear-gradient(135deg, #27ae60, #219653);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.convert-save-btn {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.convert-save-btn:hover {
+    background: linear-gradient(135deg, #8e44ad, #7d3c98);
+    transform: translateY(-2px);
+}
+
+/* =========== قائمة العناوين الفرعية =========== */
+.sub-title-list {
+    margin-top: 15px;
+}
+
+.sub-title-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.sub-title-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #3498db;
+}
+
+.sub-title-item.active {
+    background: rgba(52, 152, 219, 0.2);
+    border-color: #3498db;
+}
+
+.sub-title-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.sub-title-text {
+    font-weight: bold;
+    color: white;
+    flex: 1;
+}
+
+.sub-title-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.action-btn {
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.action-btn.edit:hover {
+    color: #3498db;
+}
+
+.action-btn.delete:hover {
+    color: #e74c3c;
+}
+
+/* =========== نافذة عرض الملفات =========== */
+.file-viewer-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.file-viewer-content {
+    background: transparent;
+    max-width: 95%;
+    max-height: 95%;
+    overflow: auto;
+    position: relative;
+}
+
+.close-viewer {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(231, 76, 60, 0.8);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    font-size: 1.2rem;
+}
+
+/* =========== كراس الأنشطة والفروض =========== */
+.notebook-upload-area {
+    border: 2px dashed #3498db;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 20px;
+    background: rgba(52, 152, 219, 0.05);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.notebook-upload-area:hover {
+    background: rgba(52, 152, 219, 0.1);
+    border-color: #2ecc71;
+}
+
+.notebook-upload-area i {
+    font-size: 3rem;
+    color: #3498db;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.pdf-files-list {
+    max-height: 300px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 15px;
+}
+
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-left: 3px solid transparent;
+}
+
+.file-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.file-item.active {
+    background: rgba(52, 152, 219, 0.3);
+    border-left-color: #3498db;
+}
+
+.file-item.notebook {
+    border-left-color: #2ecc71;
+}
+
+.file-item.homework {
+    border-left-color: #f39c12;
+}
+
+.file-type-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.badge-notebook {
+    background: #2ecc71;
+    color: white;
+}
+
+.badge-homework {
+    background: #f39c12;
+    color: white;
+}
+
+.import-type-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.import-type-btn {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #3498db;
+    background: rgba(52, 152, 219, 0.1);
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.import-type-btn.active {
+    background: #3498db;
+}
+
+.import-type-btn:hover {
+    background: rgba(52, 152, 219, 0.3);
+}
+
+/* =========== عرض الصور والوسائط =========== */
+.full-image-display {
+    margin: 20px 0;
+    width: 100%;
+}
+
+.full-image-display h4 {
+    text-align: right;
+    margin-bottom: 20px;
+    color: #2c3e50;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #3498db;
+    font-size: 1.3rem;
+}
+
+.image-full-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    width: 100%;
+}
+
+.image-full-item {
+    width: 100%;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+
+.image-full-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.image-full-item img {
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    display: block;
+    object-fit: contain;
+    background: #f8f9fa;
+}
+
+.image-full-label {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+    text-align: center;
+}
+
+.image-full-label .title {
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 5px;
+    font-size: 1.1rem;
+}
+
+.image-full-label .subtitle {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+.image-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    width: 100%;
+}
+
+.image-item {
+    width: 100% !important;
+    margin: 0 !important;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: all 0.3s;
+}
+
+.image-item:hover,
+.image-full-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+/* =========== عرض الفيديو =========== */
+.video-full-item {
+    width: 100%;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.video-full-item video {
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    display: block;
+    background: #000;
+}
+
+.video-label {
+    padding: 15px 20px;
+    background: #2c3e50;
+    color: white;
+    text-align: center;
+}
+
+/* =========== عنصر وسائط موحد =========== */
+.media-item {
+    width: 100%;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+.media-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.media-item img {
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    display: block;
+    object-fit: contain;
+    background: #f8f9fa;
+}
+
+.media-item video {
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    display: block;
+    background: #000;
+}
+
+.media-label {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+    text-align: center;
+}
+
+.media-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 15px;
+    border-radius: 20px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.badge-notebook-media {
+    background: rgba(52, 152, 219, 0.9);
+}
+
+.badge-image-media {
+    background: rgba(46, 204, 113, 0.9);
+}
+
+.badge-video-media {
+    background: rgba(155, 89, 182, 0.9);
+}
+
+/* =========== حاوية محتوى العنوان =========== */
+.title-content-display {
+    background: white;
+    border-radius: 10px;
+    padding: 0;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+/* =========== رسالة عدم وجود محتوى =========== */
+.empty-content-message {
+    padding: 60px 20px;
+    text-align: center;
+    color: #95a5a6;
+    background: #f8f9fa;
+    border-radius: 10px;
+    margin: 20px 0;
+}
+
+.empty-content-message i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    display: block;
+    color: #bdc3c7;
+}
+
+/* =========== معلومات النظام =========== */
+.system-stats {
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-size: 0.9rem;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    color: #ddd;
+}
+
+.stat-value {
+    color: #3498db;
+    font-weight: bold;
+}
+
+/* =========== رسائل الحالة =========== */
+.status-message {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 25px;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    animation: slideDown 0.3s ease, fadeOut 0.3s ease 4.7s forwards;
+    max-width: 80%;
+    white-space: pre-line;
+}
+
+.status-success {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+.status-error {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.status-info {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.status-warning {
+    background: linear-gradient(135deg, #f39c12, #d68910);
+}
+
+@keyframes slideDown {
+    from { top: -50px; opacity: 0; }
+    to { top: 20px; opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* =========== تحسينات نافذة التعديل =========== */
+#editModal {
+    z-index: 100000 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.9) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+#editModal > div {
+    position: relative !important;
+    z-index: 100001 !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+}
+
+.edit-modal-input {
+    color: #000 !important;
+    background: white !important;
+    border: 2px solid #3498db !important;
+    width: 100% !important;
+    padding: 12px !important;
+    border-radius: 6px !important;
+    font-size: 1.1rem !important;
+    text-align: right !important;
+    direction: rtl !important;
+}
+
+.edit-modal-input:focus {
+    outline: none !important;
+    border-color: #2ecc71 !important;
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.3) !important;
+}
+
+.edit-modal-textarea {
+    color: #000 !important;
+    background: white !important;
+    border: 2px solid #3498db !important;
+    width: 100% !important;
+    padding: 12px !important;
+    border-radius: 6px !important;
+    font-size: 1rem !important;
+    text-align: right !important;
+    direction: rtl !important;
+    resize: vertical !important;
+    min-height: 100px !important;
+}
+
+.edit-modal-label {
+    color: #2c3e50 !important;
+    font-weight: bold !important;
+    margin-bottom: 8px !important;
+    font-size: 1rem !important;
+}
+
+.edit-modal-section {
+    background: #f8f9fa !important;
+    padding: 15px !important;
+    border-radius: 8px !important;
+    margin-bottom: 15px !important;
+    border: 1px solid #e0e0e0 !important;
+}
+
+/* =========== تحسينات متنوعة =========== */
+.input-field:focus,
+.section-title-input:focus {
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+}
+
+.smooth-transition {
+    transition: all 0.3s ease;
+}
+
+.image-number {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(52, 152, 219, 0.9);
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.clean-title-display {
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1.4rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    width: 100%;
+    text-align: right;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.clean-title-display:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #2980b9, #1a252f);
+}
+
+.clean-title-display i {
+    font-size: 1.2rem;
+    transition: transform 0.3s;
+}
+
+.clean-title-display.active i {
+    transform: rotate(180deg);
+}
+
+/* =========== تحسينات الجوال =========== */
+@media (max-width: 768px) {
+    .lesson-area {
+        width: calc(100% - 90vw) !important;
+        margin-right: 90vw !important;
+    }
+    
+    .lesson-header-bar {
+        padding: 12px 15px !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    
+    .section-info-sticky {
+        top: 110px !important;
+        padding: 12px 15px !important;
+        font-size: 1rem !important;
+    }
+    
+    .content-wrapper {
+        padding: 15px !important;
+    }
+    
+    .toggle-sidebar {
+        top: 10px !important;
+        right: 10px !important;
+        width: 45px !important;
+        height: 45px !important;
+        font-size: 1.2rem !important;
+        z-index: 99999 !important;
+    }
+    
+    .sidebar {
+        width: 90vw !important;
+    }
+    
+    .display-card {
+        padding: 20px !important;
+    }
+    
+    .clean-title-display {
+        padding: 15px !important;
+        font-size: 1.2rem !important;
+    }
+    
+    .full-image-display h4 {
+        font-size: 1.1rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .section-info-sticky {
+        top: 130px !important;
+        padding: 10px 12px !important;
+    }
+    
+    .menu-item-content {
+        padding: 10px !important;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 8px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    .btn {
+        padding: 8px 12px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .import-type-selector {
+        flex-direction: column;
+    }
+    
+    .notebook-upload-area {
+        padding: 20px;
+    }
+    
+    .notebook-upload-area i {
+        font-size: 2rem;
+    }
+    
+    .empty-content-message {
+        padding: 40px 15px;
+    }
+}
+
+/* =========== توافق مع Safari =========== */
+@supports (-webkit-touch-callout: none) {
+    .lesson-header-bar,
+    .section-info-sticky {
+        position: -webkit-sticky !important;
+    }
+}
+/* =========== نافذة القفز إلى الصفحة - ثابتة =========== */
+.page-jump-container {
+    position: sticky !important;
+    top: 140px !important;
+    z-index: 9999 !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    margin-bottom: 10px !important;
+    padding: 5px !important;
+    background: transparent !important;
+}
+
+.page-jump-box {
+    background: white !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15) !important;
+    padding: 8px 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    direction: ltr !important;
+    border: 1px solid #3498db !important;
+    backdrop-filter: blur(0px) !important;
+}
+
+.page-jump-box input {
+    width: 80px !important;
+    padding: 8px 10px !important;
+    border: 1px solid #ccc !important;
+    border-radius: 6px !important;
+    font-size: 1rem !important;
+    text-align: center !important;
+    direction: ltr !important;
+}
+
+.page-jump-box input:focus {
+    outline: none !important;
+    border-color: #3498db !important;
+    box-shadow: 0 0 0 2px rgba(52,152,219,0.2) !important;
+}
+
+.page-jump-box button {
+    background: #3498db !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    font-size: 0.9rem !important;
+    font-weight: bold !important;
+    transition: all 0.2s !important;
+}
+
+.page-jump-box button:hover {
+    background: #2980b9 !important;
+    transform: scale(1.02) !important;
+}
+
+.page-jump-box span {
+    color: #666 !important;
+    font-size: 0.9rem !important;
+}
+    </style>
+</head>
+<body>
+    <!-- =========== زر فتح الشريط =========== -->
+    <button class="toggle-sidebar hidden" id="toggleSidebar">
+        <i class="fas fa-arrow-left"></i>
+    </button>
+    
+    <!-- =========== نافذة عرض الملفات =========== -->
+    <div class="file-viewer-modal" id="fileViewerModal">
+        <button class="close-viewer" id="closeViewer">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="file-viewer-content" id="viewerContent"></div>
+    </div>
+    
+    <!-- =========== الشريط الجانبي =========== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-edit"></i> إعداد الدرس المتقدم</h2>
+            <button class="close-sidebar" id="closeSidebar">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+        
+        <ul class="menu-items">
+            <!-- معلومات الدرس الأساسية -->
+            <li class="menu-item" id="lesson-item">
+                <div class="menu-item-header" data-section="lesson">
+                    <div class="item-title">
+                        <i class="fas fa-book"></i>
+                        <span>معلومات الدرس</span>
+                    </div>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="menu-item-content" id="lesson-content">
+                    <div class="form-group">
+                        <label for="lessonDate"><i class="far fa-calendar"></i> التاريخ</label>
+                        <input type="date" id="lessonDate" class="input-field">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lessonTitle"><i class="far fa-file-alt"></i> عنوان الدرس</label>
+                        <input type="text" id="lessonTitle" placeholder="أدخل عنوان الدرس" class="input-field">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lessonSession"><i class="far fa-clock"></i> الحصة</label>
+                        <select id="lessonSession" class="input-field">
+                            <option value="">اختر الحصة</option>
+                            <option value="الحصة الأولى">الحصة الأولى</option>
+                            <option value="الحصة الثانية">الحصة الثانية</option>
+                            <option value="الحصة الثالثة">الحصة الثالثة</option>
+                            <option value="الحصة الرابعة">الحصة الرابعة</option>
+                        </select>
+                    </div>
+                </div>
+            </li>
+            
+            <!-- وضعية الإنطلاق -->
+            <li class="menu-item" id="launch-item">
+                <div class="menu-item-header" data-section="launch">
+                    <div class="item-title">
+                        <i class="fas fa-rocket"></i>
+                        <span>وضعية الإنطلاق</span>
+                    </div>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="menu-item-content" id="launch-content">
+                    <div class="dynamic-section">
+                        <input type="text" class="section-title-input hidden-input" id="newLaunchTitle" 
+                               placeholder="أدخل عنوان جديد لوضعية الإنطلاق">
+                        <button class="add-title-btn" id="addLaunchTitle">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <div class="sub-title-list" id="launchTitlesList">
+                            <div style="text-align: center; color: #aaa; padding: 30px;">
+                                <i class="far fa-folder-open" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                                <p>لم يتم إضافة أي عناوين بعد</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+            <!-- المحتوى -->
+            <li class="menu-item" id="content-item">
+                <div class="menu-item-header" data-section="content">
+                    <div class="item-title">
+                        <i class="fas fa-book-open"></i>
+                        <span>المحتوى</span>
+                    </div>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="menu-item-content" id="content-content">
+                    <div class="dynamic-section">
+                        <input type="text" class="section-title-input hidden-input" id="newContentTitle" 
+                               placeholder="أدخل عنوان جديد للمحتوى">
+                        <button class="add-title-btn" id="addContentTitle">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <div class="sub-title-list" id="contentTitlesList">
+                            <div style="text-align: center; color: #aaa; padding: 30px;">
+                                <i class="far fa-folder-open" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                                <p>لم يتم إضافة أي عناوين بعد</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+            <!-- الأنشطة التقييمية -->
+            <li class="menu-item" id="activities-item">
+                <div class="menu-item-header" data-section="activities">
+                    <div class="item-title">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>أنشطة تقييمية</span>
+                    </div>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="menu-item-content" id="activities-content">
+                    <div class="dynamic-section">
+                        <input type="text" class="section-title-input hidden-input" id="newActivityTitle" 
+                               placeholder="أدخل عنوان جديد للنشاط">
+                        <button class="add-title-btn" id="addActivityTitle">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <div class="sub-title-list" id="activityTitlesList">
+                            <div style="text-align: center; color: #aaa; padding: 30px;">
+                                <i class="far fa-folder-open" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                                <p>لم يتم إضافة أي عناوين بعد</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            
+            <!-- المدونة -->
+            <li class="menu-item" id="notebook-item">
+                <div class="menu-item-header" data-section="notebook">
+                    <div class="item-title">
+                        <i class="fas fa-book"></i>
+                        <span>أضيف إلى كراسي</span>
+                    </div>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="menu-item-content" id="notebook-content">
+                    <div class="form-group">
+                        <label>نص المدونة</label>
+                        <textarea id="notebookText" class="input-field" rows="8" 
+                                  placeholder="أدخل نص المدونة هنا..."></textarea>
+                    </div>
+                </div>
+            </li>
+            
+            <!-- كراس الأنشطة والفروض (الجديد) -->
+            <li class="menu-item" id="activities-notebook-item">
+                <div class="menu-item-header" data-section="activities-notebook">
+                    <div class="item-title">
+                        <i class="fas fa-book"></i>
+                        <span>كراس الأنشطة والفروض</span>
+                    </div>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="menu-item-content" id="activities-notebook-content">
+                    <!-- اختيار نوع الاستيراد -->
+                    <div class="import-type-selector">
+                        <div class="import-type-btn active" id="importNotebookBtn" onclick="selectImportType('notebook')">
+                            <i class="fas fa-book"></i> كراس أنشطة
+                        </div>
+                        <div class="import-type-btn" id="importHomeworkBtn" onclick="selectImportType('homework')">
+                            <i class="fas fa-file-alt"></i> فرض
+                        </div>
+                    </div>
+                    
+            <!-- تأكد من أن هذا السطر في منطقة كراس الأنشطة والفروض موجود بهذا الشكل -->
+<div class="notebook-upload-area" id="notebookUploadArea" onclick="openFileInput()">
+    <i class="fas fa-cloud-upload-alt"></i>
+    <h3 id="importTitle">انقر لاستيراد كراس أنشطة</h3>
+    <p id="importDescription">PDF أو JSON</p>
+    <p class="small-text" id="importInfo">سيتم استخدامه كمصدر لأرقام الصفحات</p>
+</div>
+                    
+                    <input type="file" id="fileInput" multiple accept=".pdf,.json" style="display: none;">
+                    
+                    <div class="pdf-files-list" id="filesList">
+                        <div class="no-files">لم يتم استيراد أي ملفات بعد</div>
+                    </div>
+                    
+                    <button class="btn btn-success" id="convertToImages" style="width: 100%; margin-top: 15px;">
+                        <i class="fas fa-sync-alt"></i> تحويل PDF إلى صور
+                    </button>
+                    
+                    <button class="convert-save-btn" id="saveAsJsonBtn" style="width: 100%; margin-top: 10px;">
+                        <i class="fas fa-save"></i> حفظ كـ JSON
+                    </button>
+                </div>
+            </li>
+        </ul>
+        
+        <!-- قسم أدوات التحكم -->
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <div class="section-header" style="margin-bottom: 15px;">
+                <h3><i class="fas fa-cog"></i> أدوات التحكم</h3>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn btn-primary" onclick="importLessonFromFile()" 
+                        style="width: 100%; background: linear-gradient(135deg, #3498db, #2980b9);">
+                    <i class="fas fa-file-import"></i> استيراد درس
+                </button>
+                
+                <button class="btn btn-success" onclick="saveNotebookAsFile()" 
+                        style="width: 100%; background: linear-gradient(135deg, #2ecc71, #27ae60);">
+                    <i class="fas fa-save"></i> حفظ كراس الأنشطة
+                </button>
+                
+                <button class="final-save-btn" onclick="saveLessonAsFile()">
+                    <i class="fas fa-save"></i> حفظ الدرس كملف
+                </button>
+                
+                <button class="btn btn-danger" onclick="clearAllData()" 
+                        style="width: 100%;">
+                    <i class="fas fa-trash"></i> مسح جميع البيانات
+                </button>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); 
+                        border-radius: 8px; text-align: center; font-size: 0.85rem; color: #aaa;">
+                <p style="margin-bottom: 10px;"><i class="fas fa-info-circle"></i> معلومات النظام</p>
+                <div id="systemInfo">جاري التحميل...</div>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- =========== منطقة العرض الرئيسية =========== -->
+<main class="lesson-area" id="lessonArea">
+    <!-- 🔥 شريط عنوان الدرس - ثابت -->
+    <div class="lesson-header-bar">
+        <div class="date-display" id="displayDate">--/--/----</div>
+        <div class="lesson-title-display" id="displayTitle">عنوان الدرس</div>
+        <div class="session-display" id="displaySession">الحصة</div>
+    </div>
+    
+    <!-- 🔥 شريط معلومات القسم والعنوان - ثابت -->
+   <div class="section-info-sticky" id="sectionInfoSticky" style="top: 70px !important; position: sticky !important;">
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 10px;">
+        <!-- الجزء الأيسر: معلومات القسم والعنوان -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-folder-open"></i>
+            <span class="section-name" id="currentSectionName">القسم</span>
+            <span class="section-separator">:</span>
+            <span class="section-title-name" id="currentTitleName">العنوان</span>
+        </div>
+        
+        <!-- 🔥 الجزء الأيمن: نافذة البحث عن الصفحة (تظهر فقط في قسم كراس الأنشطة) -->
+        <div id="pageJumpContainer" style="display: none; align-items: center; gap: 8px; background: #f0f0f0; padding: 5px 12px; border-radius: 20px;">
+            <i class="fas fa-search" style="color: #3498db; font-size: 0.9rem;"></i>
+            <input type="number" id="pageNumberInput" placeholder="رقم الصفحة" 
+                   style="width: 90px; padding: 5px 8px; border: 1px solid #ccc; border-radius: 15px; 
+                          font-size: 0.85rem; text-align: center; direction: ltr;">
+            <button onclick="jumpToPage()" 
+                    style="background: #3498db; color: white; border: none; padding: 4px 12px; 
+                           border-radius: 15px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">
+                <i class="fas fa-arrow-left"></i> اذهب
+            </button>
+        </div>
+    </div>
+</div>
+    
+    <!-- 🔥 حاوية المحتوى القابل للتمرير -->
+    <div class="content-wrapper">
+        <!-- قسم عرض وضعية الإنطلاق -->
+        <div class="content-section active" id="launch-section">
+            <div class="display-card">
+                <h3><i class="fas fa-rocket"></i> وضعية الإنطلاق</h3>
+                <div id="launchDisplayContent">
+                    <div class="empty-content-message">
+                        <i class="far fa-file-alt"></i>
+                        <h3 style="color: #7f8c8d;">لا يوجد محتوى</h3>
+                        <p>انقر على (+) في الشريط الجانبي لإضافة محتوى جديد</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- قسم عرض المحتوى -->
+        <div class="content-section" id="content-section">
+            <div class="display-card">
+                <h3><i class="fas fa-book-open"></i> المحتوى التعليمي</h3>
+                <div id="contentDisplayContent">
+                    <div class="empty-content-message">
+                        <i class="far fa-file-alt"></i>
+                        <h3 style="color: #7f8c8d;">لا يوجد محتوى</h3>
+                        <p>انقر على (+) في الشريط الجانبي لإضافة محتوى جديد</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- قسم عرض الأنشطة التقييمية -->
+        <div class="content-section" id="activities-section">
+            <div class="display-card">
+                <h3><i class="fas fa-clipboard-check"></i> الأنشطة التقييمية</h3>
+                <div id="activitiesDisplayContent">
+                    <div class="empty-content-message">
+                        <i class="far fa-file-alt"></i>
+                        <h3 style="color: #7f8c8d;">لا يوجد محتوى</h3>
+                        <p>انقر على (+) في الشريط الجانبي لإضافة محتوى جديد</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- قسم عرض المدونة -->
+        <div class="content-section" id="notebook-section">
+            <div class="display-card">
+                <h3><i class="fas fa-book"></i> المدونة</h3>
+                <div id="displayNotebookText" class="display-text">
+                    لم يتم إدخال نص المدونة بعد.
+                </div>
+            </div>
+        </div>
+        
+        <!-- قسم عرض كراس الأنشطة والفروض -->
+        <div class="content-section" id="activities-notebook-section">
+            <div class="display-card">
+                <h3><i class="fas fa-book"></i> كراس الأنشطة والفروض</h3>
+                
+       
+    
+                <div id="notebookImagesDisplay" class="image-grid">
+                    <div class="empty-content-message">
+                        <i class="far fa-images"></i>
+                        <h3 style="color: #7f8c8d;">لا توجد ملفات</h3>
+                        <p>قم باستيراد ملفات PDF أو JSON لعرضها هنا</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+ <!-- =========== SCRIPT شامل مع جميع الدوال =========== -->
+<script>
+    // =============== المتغيرات العامة ===============
+    let lessonData = {
+        metadata: { title: '', date: '', session: '' },
+        notebookImages: [],
+        importedFiles: [],
+        launch: [],
+        content: [],
+        activities: [],
+        notebook: '',
+        currentLessonSource: null
+    };
+
+    let currentEditingSection = null;
+    let currentEditingTitle = null;
+    let pdfFiles = [];
+    let isConverting = false;
+    let currentImportType = 'notebook';
+
+    // =============== الدوال المساعدة ===============
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            if (!file) {
+                reject(new Error('لا يوجد ملف'));
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                resolve(event.target.result);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function base64ToBlob(base64String, contentType = '') {
+        if (!base64String) return null;
+        
+        const base64 = base64String.includes(',') ? base64String.split(',')[1] : base64String;
+        
+        try {
+            const byteCharacters = atob(base64);
+            const byteArrays = [];
+            
+            for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+                const slice = byteCharacters.slice(offset, offset + 512);
+                const byteNumbers = new Array(slice.length);
+                
+                for (let i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+                
+                byteArrays.push(new Uint8Array(byteNumbers));
+            }
+            
+            return new Blob(byteArrays, { type: contentType });
+        } catch (error) {
+            console.error('خطأ في تحويل Base64:', error);
+            return null;
+        }
+    }
+
+    function showStatusMessage(message, type = 'info') {
+        let messageElement = document.getElementById('statusMessage');
+        
+        if (!messageElement) {
+            messageElement = document.createElement('div');
+            messageElement.id = 'statusMessage';
+            document.body.appendChild(messageElement);
+        }
+        
+        messageElement.className = `status-message status-${type}`;
+        messageElement.textContent = message;
+        messageElement.style.display = 'block';
+        
+        setTimeout(() => {
+            messageElement.style.opacity = '0';
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+                messageElement.style.opacity = '1';
+            }, 300);
+        }, 4000);
+    }
+
+    // =============== تهيئة النظام ===============
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('lessonDate').value = today;
+        updateDisplayDate(today);
+        
+        setupSidebarBehavior();
+        initSystem();
+    });
+
+    // =============== نظام الشريط الجانبي ===============
+    function setupSidebarBehavior() {
+        const sidebar = document.getElementById('sidebar');
+        const toggleSidebar = document.getElementById('toggleSidebar');
+        const closeSidebar = document.getElementById('closeSidebar');
+        const menuItemHeaders = document.querySelectorAll('.menu-item-header');
+        
+        function hideSidebar() {
+            sidebar.classList.add('hidden');
+            toggleSidebar.classList.remove('hidden');
+        }
+
+        function showSidebar() {
+            sidebar.classList.remove('hidden');
+            toggleSidebar.classList.add('hidden');
+        }
+
+        closeSidebar.addEventListener('click', hideSidebar);
+        toggleSidebar.addEventListener('click', showSidebar);
+        
+        menuItemHeaders.forEach(header => {
+            header.addEventListener('click', function(e) {
+                if (e.target.tagName === 'BUTTON' || 
+                    e.target.tagName === 'INPUT' || 
+                    e.target.tagName === 'TEXTAREA' || 
+                    e.target.tagName === 'SELECT') {
+                    return;
+                }
+                
+                const item = this.parentElement;
+                const content = item.querySelector('.menu-item-content');
+                const isActive = this.classList.contains('active');
+                
+                document.querySelectorAll('.menu-item-header.active').forEach(otherHeader => {
+                    if (otherHeader !== this) {
+                        otherHeader.classList.remove('active');
+                        otherHeader.parentElement.querySelector('.menu-item-content').classList.remove('expanded');
+                    }
+                });
+                
+                this.classList.toggle('active');
+                content.classList.toggle('expanded');
+                
+                const sectionId = this.getAttribute('data-section');
+                if (sectionId) {
+                    showContentSection(sectionId);
+                }
+                
+                if (sidebar.classList.contains('hidden')) {
+                    showSidebar();
+                }
+            });
+        });
+        
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768 && sidebar.classList.contains('hidden')) {
+                showSidebar();
+            }
+        });
+        
+        if (window.innerWidth < 768) {
+            hideSidebar();
+        }
+    }
+
+    // =============== إصلاح جذري: نظام إضافة العناوين ===============
+  function initAddTitleButtons() {
+    // دالة مساعدة لتجهيز زر الإضافة لكل قسم
+    function setupAddButton(sectionKey, inputId, btnId) {
+        const input = document.getElementById(inputId);
+        const btn = document.getElementById(btnId);
+        
+        if (!input || !btn) {
+            console.warn(`⚠️ لم يتم العثور على: ${inputId} أو ${btnId}`);
+            return;
+        }
+        
+        // إخفاء الحقل في البداية
+        input.classList.add('hidden-input');
+        
+        // دالة إضافة العنوان (المنطق نفسه للأقسام الثلاثة)
+        const addTitleFromInput = () => {
+            const titleValue = input.value.trim();
+            if (titleValue) {
+                addNewTitle(sectionKey, titleValue);  // ← نفس الدالة ولكنها ستعمل الآن
+                input.value = '';
+            }
+            input.classList.remove('visible');
+            btn.style.display = 'flex';
+            
+            // إزالة المستمعات بعد الانتهاء
+            input.removeEventListener('keypress', keyHandler);
+            input.removeEventListener('blur', blurHandler);
+        };
+        
+        const keyHandler = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addTitleFromInput();
+            }
+        };
+        
+        const blurHandler = () => {
+            setTimeout(() => {
+                if (document.activeElement !== input) {
+                    if (input.value.trim()) {
+                        addTitleFromInput();
+                    } else {
+                        input.classList.remove('visible');
+                        btn.style.display = 'flex';
+                        input.removeEventListener('keypress', keyHandler);
+                        input.removeEventListener('blur', blurHandler);
+                    }
+                }
+            }, 100);
+        };
+        
+        // زر الإضافة - onclick مباشر بدلاً من addEventListener
+        btn.onclick = () => {
+            input.classList.add('visible');
+            input.focus();
+            btn.style.display = 'none';
+            input.addEventListener('keypress', keyHandler);
+            input.addEventListener('blur', blurHandler);
+        };
+    }
+    
+    // تهيئة الأزرار للأقسام الثلاثة
+    setupAddButton('launch', 'newLaunchTitle', 'addLaunchTitle');
+    setupAddButton('content', 'newContentTitle', 'addContentTitle');
+    setupAddButton('activities', 'newActivityTitle', 'addActivityTitle');
+    
+    console.log('✅ تم تهيئة أزرار الإضافة بنجاح');
+}
+ function addNewTitle(sectionType, title) {
+    if (!title || title.trim() === '') {
+        showStatusMessage('الرجاء إدخال عنوان صحيح', 'warning');
+        return false;
+    }
+    
+    console.log(`➕ إضافة عنوان جديد إلى ${sectionType}: "${title}"`);
+    
+    const newTitle = {
+        id: `${sectionType}-${Date.now()}`,
+        title: title.trim(),
+        notebookPages: [],
+        additionalImages: [],
+        videos: [],
+        mediaSequence: []
+    };
+    
+    lessonData[sectionType].push(newTitle);
+    
+    // فقط استدعاء دوال التحديث - لا تبحث عن العناصر هنا
+    renderCleanTitlesList(sectionType);
+    updateCleanDisplay(sectionType);
+    updateSystemInfo();
+    
+    showStatusMessage(`✅ تم إضافة عنوان جديد: "${title}"`, 'success');
+    return true;
+}
+    // =============== تسلسل الوسائط الجديد ===============
+    function addToMediaSequence(titleData, mediaType, mediaId, mediaData) {
+        if (!titleData.mediaSequence) {
+            titleData.mediaSequence = [];
+        }
+        
+        titleData.mediaSequence.push({
+            type: mediaType,
+            id: mediaId,
+            data: mediaData,
+            timestamp: Date.now()
+        });
+    }
+
+    function removeFromMediaSequence(titleData, mediaType, mediaId) {
+        if (!titleData.mediaSequence) return;
+        
+        const index = titleData.mediaSequence.findIndex(item => 
+            item.type === mediaType && item.id === mediaId
+        );
+        
+        if (index !== -1) {
+            titleData.mediaSequence.splice(index, 1);
+        }
+    }
+
+    // =============== عرض المحتوى حسب ترتيب الإدخال ===============
+
+    function renderMediaSequence(mediaSequence) {
+        if (!mediaSequence || mediaSequence.length === 0) {
+            return '<div class="empty-content-message">لا توجد وسائط</div>';
+        }
+        
+        let html = '<div class="full-image-display">';
+        html += '<h4><i class="fas fa-photo-video"></i> الوسائط المتعددة</h4>';
+        html += '<div class="image-full-grid">';
+        
+        mediaSequence.forEach((item, index) => {
+            const badgeClass = item.type === 'notebook' ? 'badge-notebook-media' : 
+                              item.type === 'image' ? 'badge-image-media' : 'badge-video-media';
+            const badgeText = item.type === 'notebook' ? 'كراس' : 
+                             item.type === 'image' ? 'صورة' : 'فيديو';
+            const iconClass = item.type === 'notebook' ? 'fas fa-book' : 
+                             item.type === 'image' ? 'fas fa-image' : 'fas fa-video';
+            
+            if (item.type === 'notebook') {
+                const image = item.data;
+                html += `
+                    <div class="media-item">
+                        <div style="position: relative;">
+                            <span class="media-badge ${badgeClass}">
+                                <i class="${iconClass}" style="margin-left: 5px;"></i>${badgeText}
+                            </span>
+                            <img src="${image.url}" alt="${image.fileName}" 
+                                 onclick="openFullImageViewer('${image.url}', '${image.fileName}')">
+                        </div>
+                        <div class="media-label">
+                            <div class="title">صفحة ${image.number}</div>
+                            <div class="subtitle">${image.fileName}</div>
+                        </div>
+                    </div>
+                `;
+            } else if (item.type === 'image') {
+                const img = item.data;
+                html += `
+                    <div class="media-item">
+                        <div style="position: relative;">
+                            <span class="media-badge ${badgeClass}">
+                                <i class="${iconClass}" style="margin-left: 5px;"></i>${badgeText}
+                            </span>
+                            <img src="${img.url}" alt="${img.name}" 
+                                 onclick="openFullImageViewer('${img.url}', '${img.name}')">
+                        </div>
+                        <div class="media-label">
+                            <div class="title">${img.name}</div>
+                            <div class="subtitle">صورة إضافية</div>
+                        </div>
+                    </div>
+                `;
+            } else if (item.type === 'video') {
+                const video = item.data;
+                html += `
+                    <div class="media-item">
+                        <div style="position: relative;">
+                            <span class="media-badge ${badgeClass}">
+                                <i class="${iconClass}" style="margin-left: 5px;"></i>${badgeText}
+                            </span>
+                            <video controls style="width: 100%; height: auto;">
+                                <source src="${video.url}" type="${video.type}">
+                                المتصفح لا يدعم تشغيل الفيديو
+                            </video>
+                        </div>
+                        <div class="media-label">
+                            <div class="title">${video.name}</div>
+                            <div class="subtitle">فيديو • ${(video.size / (1024 * 1024)).toFixed(2)} MB</div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        html += '</div></div>';
+        return html;
+    }
+// =============== دالة عرض الوسائط الأساسية ===============
+// =============== دالة عرض الوسائط الأساسية ===============
+function renderMediaItems(mediaItems) {
+    console.log(`🎨 عرض ${mediaItems.length} وسيط`);
+    
+    if (!mediaItems || mediaItems.length === 0) {
+        return `
+            <div class="empty-content-message">
+                <i class="far fa-images"></i>
+                <h3 style="color: #7f8c8d;">لا توجد وسائط</h3>
+                <p>يمكنك إضافة صفحات من كراس الأنشطة أو صور إضافية أو فيديوهات</p>
+            </div>
+        `;
+    }
+    
+    let html = '<div class="image-full-grid">'; // ✅ بدون عنوان
+    
+    mediaItems.forEach(item => {
+        const badgeClass = item.type === 'notebook' ? 'badge-notebook-media' : 
+                          item.type === 'image' ? 'badge-image-media' : 'badge-video-media';
+        const badgeText = item.type === 'notebook' ? 'كراس' : 
+                         item.type === 'image' ? 'صورة' : 'فيديو';
+        const iconClass = item.type === 'notebook' ? 'fas fa-book' : 
+                         item.type === 'image' ? 'fas fa-image' : 'fas fa-video';
+        
+        if (item.type === 'notebook' || item.type === 'image') {
+            const displayName = item.type === 'notebook' ? 
+                `صفحة ${item.data.number}` : item.displayName || item.data.name;
+            
+            html += `
+                <div class="media-item">
+                    <div style="position: relative;">
+                        <span class="media-badge ${badgeClass}">
+                            <i class="${iconClass}" style="margin-left: 5px;"></i>${badgeText}
+                        </span>
+                        <img src="${item.data.url}" alt="${displayName}" 
+                             onclick="openFullImageViewer('${item.data.url}', '${displayName}')">
+                    </div>
+                    <div class="media-label">
+                        <div class="title">${displayName}</div>
+                        <div class="subtitle">${item.subtitle || ''}</div>
+                    </div>
+                </div>
+            `;
+        } else if (item.type === 'video') {
+            html += `
+                <div class="media-item">
+                    <div style="position: relative;">
+                        <span class="media-badge ${badgeClass}">
+                            <i class="${iconClass}" style="margin-left: 5px;"></i>${badgeText}
+                        </span>
+                        <video controls style="width: 100%; height: auto;">
+                            <source src="${item.data.url}" type="${item.data.type}">
+                            المتصفح لا يدعم تشغيل الفيديو
+                        </video>
+                    </div>
+                    <div class="media-label">
+                        <div class="title">${item.displayName || item.data.name}</div>
+                        <div class="subtitle">${item.subtitle || 'فيديو'} • ${(item.data.size / (1024 * 1024)).toFixed(2)} MB</div>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    html += '</div>';
+    return html;
+}
+// =============== دالة العرض بالتسلسل ===============
+// =============== دالة العرض بالتسلسل ===============
+function renderWithSequence(titleData, allMediaItems) {
+    console.log('🔄 عرض مع التسلسل...');
+    
+    if (!titleData || !titleData.mediaSequence || titleData.mediaSequence.length === 0) {
+        return renderMediaItems(allMediaItems);
+    }
+    
+    // إنشاء خريطة للوسائط
+    const mediaMap = {};
+    
+    allMediaItems.forEach(item => {
+        let key;
+        if (item.type === 'notebook') {
+            key = `notebook-${item.data.number}`;
+        } else if (item.type === 'image') {
+            key = `image-${item.data.name}`;
+        } else if (item.type === 'video') {
+            key = `video-${item.data.name}`;
+        }
+        
+        if (key) {
+            mediaMap[key] = item;
+        }
+    });
+    
+    // تجميع حسب التسلسل
+    const sequencedItems = [];
+    
+    titleData.mediaSequence.forEach(seqItem => {
+        let key;
+        if (seqItem.type === 'notebook') {
+            key = `notebook-${seqItem.id}`;
+        } else if (seqItem.type === 'image') {
+            key = `image-${seqItem.id}`;
+        } else if (seqItem.type === 'video') {
+            key = `video-${seqItem.id}`;
+        }
+        
+        if (key && mediaMap[key]) {
+            sequencedItems.push(mediaMap[key]);
+            delete mediaMap[key];
+        }
+    });
+    
+    // إضافة الباقي
+    const remainingItems = Object.values(mediaMap);
+    const finalItems = [...sequencedItems, ...remainingItems];
+    
+    return renderMediaItems(finalItems);
+}
+// =============== دالة عرض المحتوى الكامل (الأهم) ===============
+// =============== دالة عرض المحتوى الكامل (بدون عنوان) ===============
+function renderFullContent(titleData) {
+    console.log('🎬 عرض المحتوى الكامل لـ:', titleData?.title || 'بدون عنوان');
+    
+    if (!titleData) {
+        return `
+            <div class="empty-content-message">
+                <i class="far fa-images"></i>
+                <h3 style="color: #7f8c8d;">لا توجد وسائط</h3>
+                <p>يمكنك إضافة محتوى عن طريق التعديل</p>
+            </div>
+        `;
+    }
+    
+    // جمع جميع الوسائط من جميع المصادر
+    const allMediaItems = [];
+    
+    // 1. صفحات كراس الأنشطة
+    if (titleData.notebookPages && titleData.notebookPages.length > 0) {
+        titleData.notebookPages.forEach(pageNum => {
+            const image = lessonData.notebookImages.find(img => img.number === pageNum);
+            if (image) {
+                allMediaItems.push({
+                    type: 'notebook',
+                    data: image,
+                    displayName: `صفحة ${pageNum}`,
+                    subtitle: image.fileName || 'كراس الأنشطة'
+                });
+            }
+        });
+    }
+    
+    // 2. الصور الإضافية
+    if (titleData.additionalImages && titleData.additionalImages.length > 0) {
+        titleData.additionalImages.forEach(img => {
+            allMediaItems.push({
+                type: 'image',
+                data: img,
+                displayName: img.name,
+                subtitle: 'صورة إضافية'
+            });
+        });
+    }
+    
+    // 3. الفيديوهات
+    if (titleData.videos && titleData.videos.length > 0) {
+        titleData.videos.forEach(video => {
+            allMediaItems.push({
+                type: 'video',
+                data: video,
+                displayName: video.name,
+                subtitle: 'فيديو'
+            });
+        });
+    }
+    
+    if (allMediaItems.length === 0) {
+        return `
+            <div class="empty-content-message">
+                <i class="far fa-images"></i>
+                <h3 style="color: #7f8c8d;">لا توجد وسائط</h3>
+                <p>يمكنك إضافة صفحات من كراس الأنشطة أو صور إضافية أو فيديوهات</p>
+            </div>
+        `;
+    }
+    
+    // إذا كان هناك تسلسل، استخدمه
+    if (titleData.mediaSequence && titleData.mediaSequence.length > 0) {
+        return renderWithSequence(titleData, allMediaItems);
+    }
+    
+    // عرض جميع الوسائط
+    return renderMediaItems(allMediaItems);
+}
+  // تعديل دالة initSystem - إزالة المستمع المكرر
+function initSystem() {
+    // معلومات الدرس الأساسية
+    document.getElementById('lessonDate').addEventListener('change', updateLessonInfo);
+    document.getElementById('lessonTitle').addEventListener('input', updateLessonInfo);
+    document.getElementById('lessonSession').addEventListener('change', updateLessonInfo);
+    
+    // ✅ كراس الأنشطة والفروض - إزالة المستمع المكرر
+    // document.getElementById('notebookUploadArea').addEventListener('click', () => {
+    //     document.getElementById('fileInput').click();
+    // });
+    
+    // ✅ تم نقل المستمع إلى HTML مباشرة (onclick="openFileInput()")
+    
+    document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+    document.getElementById('convertToImages').addEventListener('click', convertPDFsToImages);
+    document.getElementById('saveAsJsonBtn').addEventListener('click', saveCurrentNotebookAsJson);
+    
+    // المدونة
+    document.getElementById('notebookText').addEventListener('input', function() {
+        lessonData.notebook = this.value;
+        document.getElementById('displayNotebookText').textContent = 
+            this.value || 'لم يتم إدخال نص المدونة بعد.';
+    });
+    
+    // نافذة العرض
+    document.getElementById('closeViewer').addEventListener('click', function() {
+        document.getElementById('fileViewerModal').style.display = 'none';
+    });
+    
+    document.getElementById('fileViewerModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+        }
+    });
+    
+    // إصلاح: تهيئة أزرار إضافة العناوين
+    initAddTitleButtons();
+    
+    // تحديث معلومات النظام
+    setInterval(updateSystemInfo, 5000);
+    updateSystemInfo();
+    
+    // عرض قسم وضعية الإنطلاق افتراضياً
+    showContentSection('launch');
+    
+    // تهيئة العروض
+    setTimeout(() => {
+        ['launch', 'content', 'activities'].forEach(section => {
+            renderCleanTitlesList(section);
+            updateCleanDisplay(section);
+        });
+    }, 100);
+}
+    // =============== معلومات الدرس الأساسية ===============
+    function updateLessonInfo() {
+        const date = document.getElementById('lessonDate').value;
+        const title = document.getElementById('lessonTitle').value || 'عنوان الدرس';
+        const session = document.getElementById('lessonSession').value || 'الحصة';
+        
+        lessonData.metadata = {
+            title: title,
+            date: date,
+            session: session
+        };
+        
+        updateDisplayDate(date);
+        document.getElementById('displayTitle').textContent = title;
+        document.getElementById('displaySession').textContent = session;
+    }
+
+    function updateDisplayDate(date) {
+        if (!date) {
+            document.getElementById('displayDate').textContent = '--/--/----';
+            return;
+        }
+        
+        const d = new Date(date);
+        const day = d.getDate().toString().padStart(2, '0');
+        const month = (d.getMonth() + 1).toString().padStart(2, '0');
+        const year = d.getFullYear();
+        document.getElementById('displayDate').textContent = `${day}/${month}/${year}`;
+  
+}
+
+// =============== إظهار/إخفاء نافذة البحث حسب القسم ===============
+function togglePageJumpVisibility(sectionType) {
+    const pageJumpContainer = document.getElementById('pageJumpContainer');
+    if (pageJumpContainer) {
+        if (sectionType === 'activities-notebook') {
+            pageJumpContainer.style.display = 'flex';
+        } else {
+            pageJumpContainer.style.display = 'none';
+        }
+    }
+}
+function updateSectionInfo(sectionType, titleName = null) {
+    const sectionNameElement = document.getElementById('currentSectionName');
+    const titleNameElement = document.getElementById('currentTitleName');
+    
+    if (!sectionNameElement || !titleNameElement) return;
+    
+    // ترجمة اسم القسم للعربية حسب النوع
+    let sectionName = '';
+    let titleDisplay = '------';
+    
+    switch(sectionType) {
+        case 'launch':
+            sectionName = 'وضعية الإنطلاق';
+            titleDisplay = titleName || '------';
+            break;
+        case 'content':
+            sectionName = 'المحتوى التعليمي';
+            titleDisplay = titleName || '------';
+            break;
+        case 'activities':
+            sectionName = 'الأنشطة التقييمية';
+            titleDisplay = titleName || '------';
+            break;
+        case 'notebook':
+            sectionName = 'أضيف إلى كراسي';
+            titleDisplay = 'أضيف الى كراسي';
+            break;
+        case 'activities-notebook':
+            sectionName = 'كراس الأنشطة والفروض';
+            // ✅ إذا تم تمرير اسم عنوان، استخدمه
+            if (titleName) {
+                titleDisplay = titleName;
+            } 
+            // ✅ إذا لم يتم تمرير اسم، ابحث عن الملف النشط
+            else if (lessonData && lessonData.currentLessonSource) {
+                const activeFile = lessonData.importedFiles.find(f => f.id === lessonData.currentLessonSource);
+                if (activeFile) {
+                    titleDisplay = activeFile.name;
+                }
+            }
+            break;
+        default:
+            sectionName = sectionType;
+            titleDisplay = titleName || '------';
+    }
+    
+    sectionNameElement.textContent = sectionName;
+    titleNameElement.textContent = titleDisplay;
+    // إظهار/إخفاء نافذة البحث
+togglePageJumpVisibility(sectionType);
+}
+    // =============== عرض أقسام المحتوى ===============
+    
+  // =============== عرض أقسام المحتوى ===============
+function showContentSection(sectionId, titleName = null) {
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    let elementId;
+    let sectionType = sectionId;
+    
+    switch(sectionId) {
+        case 'lesson':
+            elementId = 'launch-section';
+            sectionType = 'launch';
+            break;
+        case 'notebook':
+            elementId = 'notebook-section';
+            sectionType = 'notebook';
+            break;
+        case 'activities-notebook':
+            elementId = 'activities-notebook-section';
+            sectionType = 'activities-notebook';
+            break;
+        default:
+            elementId = `${sectionId}-section`;
+            sectionType = sectionId;
+    }
+    
+    const sectionElement = document.getElementById(elementId);
+    if (sectionElement) {
+        sectionElement.classList.add('active');
+        
+        // ✅ تحديث شريط المعلومات حسب نوع القسم
+        if (sectionType === 'activities-notebook') {
+            // لقسم كراس الأنشطة، نمرر null ليقوم بتحديث اسم الملف النشط تلقائياً
+            updateSectionInfo(sectionType);
+        } else {
+            updateSectionInfo(sectionType, titleName);
+        }
+    }
+}
+
+// =============== اختيار عنوان من القائمة ===============
+function selectTitle(sectionType, titleName) {
+    console.log('🔄 تم اختيار العنوان:', titleName, 'في القسم:', sectionType);
+    
+    // عرض القسم المناسب
+    showContentSection(sectionType, titleName);
+    
+    // البحث عن محتوى العنوان وإظهاره
+    const titles = lessonData[sectionType];
+    const titleData = titles.find(t => t.title === titleName);
+    
+    if (titleData) {
+        // إخفاء كل محتويات العناوين
+        document.querySelectorAll('.title-content-display').forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        // إظهار محتوى العنوان المحدد
+        let contentElement = document.getElementById(`${titleData.id}-display`);
+        
+        if (!contentElement) {
+            // إذا لم يكن موجوداً، أنشئه
+            const displayElement = document.getElementById(`${sectionType}DisplayContent`);
+            contentElement = document.createElement('div');
+            contentElement.id = `${titleData.id}-display`;
+            contentElement.className = 'title-content-display';
+            contentElement.innerHTML = renderFullContent(titleData);
+            displayElement.appendChild(contentElement);
+        }
+        
+        contentElement.style.display = 'block';
+        
+        // تحديث شريط المعلومات باسم العنوان
+        updateSectionInfo(sectionType, titleName);
+        
+        // تمرير للمحتوى
+        setTimeout(() => {
+            contentElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+}
+    
+     // =============== عرض العناوين النظيف في الشريط ===============
+function renderCleanTitlesList(sectionType) {
+    // تحديد الـ id الصحيح لكل قسم
+    let elementId;
+    if (sectionType === 'activities') {
+        elementId = 'activityTitlesList';
+    } else if (sectionType === 'launch') {
+        elementId = 'launchTitlesList';
+    } else if (sectionType === 'content') {
+        elementId = 'contentTitlesList';
+    } else {
+        elementId = `${sectionType}TitlesList`;
+    }
+    
+    const listElement = document.getElementById(elementId);
+    
+    if (!listElement) {
+        console.error(`❌ العنصر ${elementId} غير موجود`);
+        return;
+    }
+    
+    const titlesArray = lessonData[sectionType];
+    
+    if (!titlesArray || titlesArray.length === 0) {
+        listElement.innerHTML = `<div style="text-align: center; color: #aaa; padding: 30px;">
+            <i class="far fa-folder-open" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+            <p>لم يتم إضافة أي عناوين بعد</p>
+        </div>`;
+        return;
+    }
+    
+    let html = '';
+    titlesArray.forEach((titleData, index) => {
+        const safeTitle = titleData.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        html += `
+            <div class="sub-title-item" data-id="${titleData.id}" onclick="selectTitle('${sectionType}', '${safeTitle}')">
+                <div class="sub-title-header">
+                    <div class="sub-title-text" style="cursor: pointer; flex: 1; display: flex; align-items: center;">
+                        <i class="fas fa-file-alt" style="margin-left: 10px; color: #3498db;"></i>
+                        <span style="flex: 1;">${escapeHtml(titleData.title)}</span>
+                    </div>
+                    <div class="sub-title-actions">
+                        <button class="action-btn edit" onclick="event.stopPropagation(); editTitle('${sectionType}', ${index})" title="تعديل">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete" onclick="event.stopPropagation(); deleteTitle('${sectionType}', ${index})" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    listElement.innerHTML = html;
+    console.log(`✅ تم تحديث قائمة ${elementId}`);
+}
+// دالة مساعدة لتجنب Injection
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+function updateCleanDisplay(sectionType) {
+    let displayId;
+    if (sectionType === 'activities') {
+        displayId = 'activitiesDisplayContent';
+    } else if (sectionType === 'launch') {
+        displayId = 'launchDisplayContent';
+    } else if (sectionType === 'content') {
+        displayId = 'contentDisplayContent';
+    } else {
+        displayId = `${sectionType}DisplayContent`;
+    }
+    
+    const displayElement = document.getElementById(displayId);
+    
+    if (!displayElement) {
+        console.error(`❌ العنصر ${displayId} غير موجود`);
+        return;
+    }
+    
+    if (!lessonData[sectionType] || lessonData[sectionType].length === 0) {
+        displayElement.innerHTML = `<div class="empty-content-message">
+            <i class="far fa-file-alt"></i>
+            <h3>لا يوجد محتوى</h3>
+            <p>انقر على (+) في الشريط الجانبي لإضافة محتوى جديد</p>
+        </div>`;
+        return;
+    }
+    
+    let html = '<div class="titles-container">';
+    lessonData[sectionType].forEach((titleData) => {
+        html += `<div id="${titleData.id}-display" class="title-content-display" style="display: block; margin-bottom: 30px;">
+            ${renderFullContent(titleData)}
+        </div>`;
+    });
+    html += '</div>';
+    displayElement.innerHTML = html;
+}
+        // =============== إدارة الاستيراد ===============
+        function selectImportType(type) {
+            currentImportType = type;
+            
+            document.getElementById('importNotebookBtn').classList.toggle('active', type === 'notebook');
+            document.getElementById('importHomeworkBtn').classList.toggle('active', type === 'homework');
+            
+            const importTitle = document.getElementById('importTitle');
+            const importDescription = document.getElementById('importDescription');
+            const importInfo = document.getElementById('importInfo');
+            
+            if (type === 'notebook') {
+                importTitle.textContent = 'انقر لاستيراد كراس أنشطة';
+                importDescription.textContent = 'PDF أو JSON';
+                importInfo.textContent = 'سيتم استخدامه كمصدر لأرقام الصفحات';
+            } else {
+                importTitle.textContent = 'انقر لاستيراد فرض';
+                importDescription.textContent = 'PDF أو JSON';
+                importInfo.textContent = 'سيتم عرضه فقط (ليس مصدرًا للدروس)';
+            }
+        }
+
+        function openFileInput() {
+            document.getElementById('fileInput').click();
+        }
+
+    function handleFileUpload(event) {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+    
+    const pdfFilesArray = files.filter(file => file.name.toLowerCase().endsWith('.pdf'));
+    const jsonFiles = files.filter(file => file.name.toLowerCase().endsWith('.json'));
+    
+    if (pdfFilesArray.length > 0) {
+        pdfFilesArray.forEach(file => {
+            // ✅ التأكد من تخزين اسم الملف بشكل صحيح
+            const fileObj = {
+                file: file,
+                name: file.name,  // ✅ تخزين الاسم بشكل منفصل أيضاً
+                type: currentImportType,
+                size: file.size
+            };
+            
+            if (!pdfFiles.find(f => f.name === file.name)) {
+                pdfFiles.push(fileObj);
+            }
+        });
+        
+        showStatusMessage(`تم إضافة ${pdfFilesArray.length} ملف PDF للتحويل`, 'info');
+    }
+    
+    if (jsonFiles.length > 0) {
+        jsonFiles.forEach(file => {
+            handleJsonFile(file, currentImportType);
+        });
+    }
+    
+    updateFilesList();
+    event.target.value = '';
+}
+        async function handleJsonFile(file, importType) {
+    try {
+        let text = await file.text();
+        
+        // تنظيف النص من أي أحرف خاصة
+        const cleanedText = text.trim();
+        
+        let jsonData;
+        try {
+            jsonData = JSON.parse(cleanedText);
+        } catch (parseError) {
+            console.error('خطأ في تحليل JSON:', parseError);
+            showStatusMessage(`❌ ملف JSON غير صالح: ${file.name}`, 'error');
+            return;
+        }
+        
+        console.log('📄 بيانات JSON المستوردة:', {
+            type: jsonData.type,
+            version: jsonData.version,
+            hasImages: !!jsonData.images,
+            imagesCount: jsonData.images ? jsonData.images.length : 0
+        });
+        
+        // ============== كراس الأنشطة ==============
+        if (importType === 'notebook') {
+            // دعم تنسيقات متعددة للـ JSON
+            const isValidFormat = (
+                jsonData.type === 'notebook-repository' ||
+                jsonData.type === 'notebook-library' ||
+                jsonData.type === 'lesson' ||
+                (jsonData.images && Array.isArray(jsonData.images))
+            );
+            
+            if (!isValidFormat) {
+                showStatusMessage(`❌ ملف JSON غير متوافق: ${file.name}`, 'warning');
+                console.warn('تنسيق غير معروف:', jsonData);
+                return;
+            }
+            
+            // استخراج الصور من التنسيقات المختلفة
+            let imagesArray = [];
+            
+            if (jsonData.type === 'notebook-repository' || jsonData.type === 'lesson') {
+                imagesArray = jsonData.images || [];
+            } else if (jsonData.type === 'notebook-library') {
+                // تجميع الصور من جميع الكراسات
+                if (jsonData.notebooks && Array.isArray(jsonData.notebooks)) {
+                    jsonData.notebooks.forEach(notebook => {
+                        if (notebook.images && Array.isArray(notebook.images)) {
+                            imagesArray = imagesArray.concat(notebook.images);
+                        }
+                    });
+                }
+            } else if (jsonData.images) {
+                imagesArray = jsonData.images;
+            }
+            
+            // التحقق من صحة الصور
+            const validImages = imagesArray.filter(img => 
+                img && img.url && (img.url.startsWith('data:image/') || img.url.startsWith('blob:'))
+            );
+            
+            if (validImages.length === 0) {
+                showStatusMessage(`❌ لا توجد صور صالحة في الملف: ${file.name}`, 'warning');
+                return;
+            }
+            
+            const fileId = `json-notebook-${Date.now()}`;
+            
+            lessonData.importedFiles.push({
+                id: fileId,
+                name: file.name,
+                type: 'notebook',
+                fileType: 'json',
+                size: file.size,
+                images: validImages,
+                originalData: jsonData,
+                uploadedAt: new Date().toISOString()
+            });
+            
+            if (!lessonData.currentLessonSource) {
+                lessonData.currentLessonSource = fileId;
+            }
+            
+            // إضافة الصور إلى مخزن الصور العام (بدون تكرار)
+            let addedCount = 0;
+            validImages.forEach(newImg => {
+                const exists = lessonData.notebookImages.some(
+                    existingImg => existingImg.number === newImg.number
+                );
+                if (!exists) {
+                    lessonData.notebookImages.push(newImg);
+                    addedCount++;
+                }
+            });
+            
+            console.log(`✅ تم استيراد ${validImages.length} صورة، إضافة ${addedCount} صورة جديدة`);
+            showStatusMessage(`✅ تم استيراد كراس أنشطة: ${file.name} (${validImages.length} صفحة)`, 'success');
+        }
+        
+        // ============== الفرض ==============
+        else if (importType === 'homework') {
+            const fileId = `json-homework-${Date.now()}`;
+            
+            // 🔥 استخراج الصور من JSON
+            let images = [];
+            
+            // التنسيقات المختلفة للصور في الفروض
+            if (jsonData.images && Array.isArray(jsonData.images)) {
+                images = jsonData.images;
+            } else if (jsonData.pages && Array.isArray(jsonData.pages)) {
+                images = jsonData.pages;
+            } else if (Array.isArray(jsonData)) {
+                images = jsonData;
+            } else if (jsonData.content && jsonData.content.images) {
+                images = jsonData.content.images;
+            } else if (jsonData.data && jsonData.data.images) {
+                images = jsonData.data.images;
+            }
+            
+            // التحقق من صحة الصور
+            const validImages = images.filter(img => 
+                img && (img.url || img.src) && 
+                ((img.url || img.src || '').startsWith('data:image/') || 
+                 (img.url || img.src || '').startsWith('blob:'))
+            );
+            
+            lessonData.importedFiles.push({
+                id: fileId,
+                name: file.name,
+                type: 'homework',
+                fileType: 'json',
+                size: file.size,
+                images: validImages,      // ✅ الصور هنا للعرض المباشر
+                content: jsonData,        // ✅ الاحتفاظ بالبيانات الأصلية
+                uploadedAt: new Date().toISOString()
+            });
+            
+            console.log(`✅ تم استيراد فرض: ${file.name} (${validImages.length} صفحة)`);
+            
+            if (validImages.length > 0) {
+                showStatusMessage(`✅ تم استيراد فرض: ${file.name} (${validImages.length} صفحة)`, 'success');
+            } else {
+                showStatusMessage(`⚠️ تم استيراد فرض بدون صور: ${file.name}`, 'warning');
+            }
+        }
+        
+        // ============== درس مستورد (يأتي من loadImportedData وليس هنا) ==============
+        
+        // تحديث القائمة والعرض
+        updateFilesList();
+        displayAllNotebookImages(lessonData.currentLessonSource);
+        updateSystemInfo();
+        
+    } catch (error) {
+        console.error('❌ خطأ في معالجة ملف JSON:', error);
+        showStatusMessage(`❌ خطأ في ملف JSON: ${file.name} - ${error.message}`, 'error');
+    }
+}
+     function updateFilesList() {
+    const listElement = document.getElementById('filesList');
+    const allFiles = [...pdfFiles, ...lessonData.importedFiles];
+    
+    if (allFiles.length === 0) {
+        listElement.innerHTML = '<div class="no-files">لم يتم استيراد أي ملفات بعد</div>';
+        document.getElementById('convertToImages').style.display = 'none';
+        document.getElementById('saveAsJsonBtn').style.display = 'none';
+        return;
+    }
+    
+    let html = '<h4 style="color: #ddd; margin-bottom: 10px;">الملفات:</h4>';
+    
+    // عرض ملفات PDF في قائمة الانتظار
+    pdfFiles.forEach((file, index) => {
+        const size = (file.size / (1024 * 1024)).toFixed(2);
+        const badgeClass = file.type === 'notebook' ? 'badge-notebook' : 'badge-homework';
+        const badgeText = file.type === 'notebook' ? 'كراس' : 'فرض';
+        
+        // ✅ التأكد من اسم الملف
+        let fileName = '';
+        if (file.file && file.file.name) {
+            fileName = file.file.name;
+        } else if (file.name) {
+            fileName = file.name;
+        } else {
+            fileName = 'ملف بدون اسم';
+        }
+        
+        html += `
+            <div class="file-item ${file.type}">
+                <div style="display: flex; align-items: center;">
+                    <span class="file-type-badge ${badgeClass}">${badgeText}</span>
+                    <div>
+                        <div style="display: flex; align-items: center;">
+                            <i class="fas fa-file-pdf" style="color: #e74c3c; margin-left: 8px;"></i>
+                            <span>${fileName}</span> <!-- ✅ الآن يظهر الاسم الصحيح -->
+                        </div>
+                        <div style="font-size: 0.8rem; color: #aaa; margin-top: 3px;">
+                            PDF • ${size} MB • في انتظار التحويل
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="action-btn delete" onclick="removePdfFile(${index})" title="حذف">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    // عرض الملفات المستوردة
+    lessonData.importedFiles.forEach((file, index) => {
+        const size = (file.size / (1024 * 1024)).toFixed(2);
+        const isActive = lessonData.currentLessonSource === file.id;
+        
+        let badgeClass, badgeText, iconColor, clickHandler;
+        
+        if (file.type === 'notebook') {
+            badgeClass = 'badge-notebook';
+            badgeText = 'كراس';
+            iconColor = '#2ecc71';
+            clickHandler = `selectFile(${index})`;
+        } else if (file.type === 'homework') {
+            badgeClass = 'badge-homework';
+            badgeText = 'فرض';
+            iconColor = '#f39c12';
+            clickHandler = `selectFile(${index})`;
+        } else if (file.type === 'lesson') {
+            badgeClass = 'badge-lesson';
+            badgeText = 'درس';
+            iconColor = '#3498db';
+            clickHandler = '';
+        }
+        
+        const itemClass = `file-item ${file.type} ${isActive ? 'active' : ''}`;
+        const onclickAttr = clickHandler ? `onclick="${clickHandler}"` : '';
+        
+        // ✅ التأكد من اسم الملف
+        const fileName = file.name || 'ملف بدون اسم';
+        
+        html += `
+            <div class="${itemClass}" ${onclickAttr} style="cursor: ${clickHandler ? 'pointer' : 'default'};">
+                <div style="display: flex; align-items: center;">
+                    <span class="file-type-badge ${badgeClass}">${badgeText}</span>
+                    <div>
+                        <div style="display: flex; align-items: center;">
+                            <i class="fas fa-file-code" 
+                               style="color: ${iconColor}; margin-left: 8px;"></i>
+                            <span>${fileName}</span> <!-- ✅ الآن يظهر الاسم الصحيح -->
+                        </div>
+                        <div style="font-size: 0.8rem; color: #aaa; margin-top: 3px;">
+                            ${file.type === 'lesson' ? '📚 درس مستورد' : file.fileType === 'pdf' ? 'PDF محول' : 'JSON'} • ${size} MB
+                            ${file.type === 'lesson' ? '• للعناوين فقط' : ''}
+                            ${file.type === 'notebook' && isActive ? '• المصدر الحالي' : ''}
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    ${file.type === 'notebook' && isActive ? 
+                        '<span style="font-size: 0.8rem; color: #2ecc71;"><i class="fas fa-check-circle"></i></span>' : ''}
+                    <button class="action-btn delete" onclick="event.stopPropagation(); removeFile(${index})" title="حذف">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    listElement.innerHTML = html;
+    
+    document.getElementById('convertToImages').style.display = pdfFiles.length > 0 ? 'block' : 'none';
+    document.getElementById('saveAsJsonBtn').style.display = lessonData.importedFiles.length > 0 ? 'block' : 'none';
+}
+        function removePdfFile(index) {
+            if (confirm('هل تريد حذف هذا الملف من قائمة الانتظار؟')) {
+                pdfFiles.splice(index, 1);
+                updateFilesList();
+            }
+        }
+// =============== دالة محسنة لاختيار الملف ===============
+// =============== دالة محسنة لاختيار الملف ===============
+function selectFile(index) {
+    const file = lessonData.importedFiles[index];
+    
+    if (!file) return;
+    
+    console.log(`📂 تم اختيار الملف: ${file.name} (نوع: ${file.type})`);
+    
+    if (file.type === 'notebook') {
+        lessonData.currentLessonSource = file.id;
+        displayAllNotebookImages(file.id);
+        // ✅ تحديث العنوان الثابت مباشرة
+        updateSectionInfo('activities-notebook', file.name);
+        showStatusMessage(`✅ تم اختيار "${file.name}" كمصدر لأرقام الصفحات`, 'success');
+    } 
+    else if (file.type === 'homework') {
+        // ✅ للفروض، لا نغير currentLessonSource
+        displayHomework(file);
+        // ✅ تحديث العنوان الثابت باسم الفرض
+        updateSectionInfo('activities-notebook', file.name);
+        showStatusMessage(`📄 يعرض الآن الفرض: "${file.name}"`, 'info');
+    }
+    else if (file.type === 'lesson') {
+        displayAllNotebookImages(file.id);
+        // ✅ تحديث العنوان الثابت باسم الدرس المستورد
+        updateSectionInfo('activities-notebook', file.name);
+        showStatusMessage(`📚 درس مستورد: "${file.name}"`, 'info');
+    }
+    
+    updateFilesList();
+}
+        function removeFile(index) {
+            if (confirm('هل تريد حذف هذا الملف من القائمة؟')) {
+                const file = lessonData.importedFiles[index];
+                
+                if (lessonData.currentLessonSource === file.id) {
+                    lessonData.currentLessonSource = null;
+                }
+                
+                lessonData.importedFiles.splice(index, 1);
+                updateFilesList();
+                displayAllNotebookImages();
+                
+                showStatusMessage(`تم حذف الملف: ${file.name}`, 'success');
+            }
+        }
+
+        // =============== تحويل PDF إلى صور ===============
+async function convertPDFsToImages() {
+    if (isConverting) {
+        alert('جاري التحويل حالياً، يرجى الانتظار...');
+        return;
+    }
+    
+    if (pdfFiles.length === 0) {
+        alert('لم يتم إضافة أي ملفات PDF للتحويل');
+        return;
+    }
+    
+    isConverting = true;
+    const button = document.getElementById('convertToImages');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحويل...';
+    button.disabled = true;
+    
+    try {
+        // 🔥 الإصلاح: حساب الرقم الأول بشكل صحيح
+        let currentImageNumber = 1;
+        if (lessonData.notebookImages.length > 0) {
+            // البحث عن أكبر رقم موجود
+            const allNumbers = lessonData.notebookImages.map(img => img.number).filter(n => !isNaN(n));
+            if (allNumbers.length > 0) {
+                currentImageNumber = Math.max(...allNumbers) + 1;
+            }
+        }
+        
+        console.log('🔥 بدء الترقيم من:', currentImageNumber);
+        
+        // الحصول على قيمة القص
+        const cropValueInput = document.getElementById('cropBottomValue');
+        const cropBottom = cropValueInput ? parseInt(cropValueInput.value) || 0 : 0;
+        
+        let totalConvertedImages = 0;
+        let filesConverted = 0;
+        
+        for (let i = 0; i < pdfFiles.length; i++) {
+            const pdfFile = pdfFiles[i];
+            
+            console.log(`🔥 تحويل الملف ${i+1}/${pdfFiles.length}: ${pdfFile.name}`);
+            console.log(`🔥 بدء الترقيم من: ${currentImageNumber}`);
+            
+            // تحويل الملف الحالي مع تمرير currentImageNumber الصحيح
+            const images = await convertPDFToImages(pdfFile.file, currentImageNumber, cropBottom);
+            
+            console.log(`🔥 تم تحويل ${images.length} صفحة من ${pdfFile.name}`);
+            
+            // 🔥 الإصلاح: التحقق من الأرقام قبل الإضافة
+            images.forEach((img, idx) => {
+                if (typeof img.number === 'undefined' || img.number === null) {
+                    console.warn(`⚠️ الصورة ${idx} بدون رقم! تعيين الرقم: ${currentImageNumber + idx}`);
+                    img.number = currentImageNumber + idx;
+                }
+                console.log(`  📄 الصورة ${idx}: رقم ${img.number}`);
+            });
+            
+            // إضافة الصور إلى المخزن العام
+            lessonData.notebookImages.push(...images);
+            totalConvertedImages += images.length;
+            filesConverted++;
+            
+            // إنشاء معرف فريد للملف
+            const fileId = `pdf-${pdfFile.type}-${Date.now()}-${i}`;
+            
+            // إضافة معلومات الملف
+            lessonData.importedFiles.push({
+                id: fileId,
+                name: pdfFile.name,
+                type: pdfFile.type,
+                fileType: 'pdf',
+                size: pdfFile.size,
+                images: images,
+                originalPageStart: currentImageNumber,
+                originalPageEnd: currentImageNumber + images.length - 1,
+                uploadedAt: new Date().toISOString()
+            });
+            
+            if (pdfFile.type === 'notebook' && !lessonData.currentLessonSource) {
+                lessonData.currentLessonSource = fileId;
+            }
+            
+            // 🔥 الإصلاح: تحديث الرقم بشكل صحيح للاستمرارية
+            currentImageNumber += images.length;
+            
+            console.log(`🔥 بعد الملف ${pdfFile.name}: الترقيم التالي يبدأ من ${currentImageNumber}`);
+            
+            // تحديث الواجهة بعد كل ملف
+            showStatusMessage(`✅ تم تحويل ${images.length} صفحة من ${pdfFile.name} (الصفحات ${currentImageNumber-images.length} إلى ${currentImageNumber-1})`, 'info');
+        }
+        
+        // مسح قائمة الانتظار
+        pdfFiles = [];
+        
+        // 🔥 فحص نهائي للترقيم
+        console.log('🔥 الفحص النهائي للترقيم:');
+        const allNumbers = lessonData.notebookImages.map(img => img.number);
+        console.log('- جميع الأرقام:', allNumbers);
+        console.log('- الترقيم من:', Math.min(...allNumbers));
+        console.log('- الترقيم إلى:', Math.max(...allNumbers));
+        
+        // التحقق من التكرارات
+        const duplicates = allNumbers.filter((item, index) => allNumbers.indexOf(item) !== index);
+        if (duplicates.length > 0) {
+            console.error('🔥 أرقام مكررة:', [...new Set(duplicates)]);
+        }
+        
+        // تحديث العروض
+        displayAllNotebookImages();
+        updateFilesList();
+        updateSystemInfo();
+        
+        const cropMsg = cropBottom > 0 ? ` (مع قص ${cropBottom}px من الأسفل)` : '';
+        showStatusMessage(
+            `✅ تم تحويل ${filesConverted} ملفات → ${totalConvertedImages} صفحة${cropMsg}\n📊 الترقيم من 1 إلى ${Math.max(...allNumbers)}`,
+            'success'
+        );
+        
+    } catch (error) {
+        console.error('🔥 خطأ في تحويل PDF:', error);
+        showStatusMessage(`❌ حدث خطأ أثناء تحويل PDF: ${error.message}`, 'error');
+    } finally {
+        isConverting = false;
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }
+}
+// =============== دالة تحويل ملف PDF واحد إلى صور ===============
+async function convertPDFToImages(pdfFile, startNumber, cropBottom = 0) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // التأكد من وجود الملف
+            if (!pdfFile) {
+                reject(new Error('الملف غير موجود'));
+                return;
+            }
+            
+            // قراءة الملف
+            const fileReader = new FileReader();
+            
+            fileReader.onload = async function(event) {
+                try {
+                    const typedarray = new Uint8Array(event.target.result);
+                    const loadingTask = pdfjsLib.getDocument(typedarray);
+                    const pdf = await loadingTask.promise;
+                    const numPages = pdf.numPages;
+                    
+                    const images = [];
+                    
+                    // الحصول على اسم الملف
+                    let fileName = 'ملف بدون اسم';
+                    if (pdfFile.name) {
+                        fileName = pdfFile.name;
+                    } else if (pdfFile.fileName) {
+                        fileName = pdfFile.fileName;
+                    }
+                    
+                    console.log(`📄 تحويل ${fileName}: ${numPages} صفحة`);
+                    
+                    // تحويل كل صفحة
+                    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+                        const page = await pdf.getPage(pageNum);
+                        const viewport = page.getViewport({ scale: 1.5 });
+                        
+                        // إنشاء Canvas
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        
+                        // رسم الصفحة
+                        await page.render({
+                            canvasContext: context,
+                            viewport: viewport
+                        }).promise;
+                        
+                        // قص الصورة إذا لزم الأمر
+                        let imageUrl;
+                        if (cropBottom > 0) {
+                            const croppedHeight = Math.max(viewport.height - cropBottom, 100);
+                            const finalCanvas = document.createElement('canvas');
+                            const finalContext = finalCanvas.getContext('2d');
+                            
+                            finalCanvas.width = viewport.width;
+                            finalCanvas.height = croppedHeight;
+                            
+                            finalContext.drawImage(
+                                canvas,
+                                0, 0, viewport.width, croppedHeight,
+                                0, 0, viewport.width, croppedHeight
+                            );
+                            
+                            imageUrl = finalCanvas.toDataURL('image/jpeg', 0.9);
+                        } else {
+                            imageUrl = canvas.toDataURL('image/jpeg', 0.9);
+                        }
+                        
+                        // إنشاء كائن الصورة
+                        const imageData = {
+                            id: `img-${startNumber + pageNum - 1}-${Date.now()}`,
+                            number: startNumber + pageNum - 1,
+                            pageNumber: startNumber + pageNum - 1,
+                            originalPageInPdf: pageNum,
+                            url: imageUrl,
+                            fileName: fileName,
+                            originalFileName: fileName,
+                            totalPages: numPages,
+                            cropped: cropBottom > 0,
+                            timestamp: new Date().toISOString()
+                        };
+                        
+                        images.push(imageData);
+                    }
+                    
+                    resolve(images);
+                    
+                } catch (error) {
+                    console.error('❌ خطأ في تحويل صفحة PDF:', error);
+                    reject(error);
+                }
+            };
+            
+            fileReader.onerror = reject;
+            fileReader.readAsArrayBuffer(pdfFile);
+            
+        } catch (error) {
+            console.error('❌ خطأ عام في تحويل PDF:', error);
+            reject(error);
+        }
+    });
+}
+function displayHomework(file) {
+    console.log('📄 عرض الفرض:', file);
+    
+    const displayElement = document.getElementById('notebookImagesDisplay');
+    
+    if (!file) {
+        console.error('❌ الملف غير موجود');
+        displayElement.innerHTML = `
+            <div class="empty-content-message">
+                <i class="far fa-file-alt"></i>
+                <h3 style="color: #7f8c8d;">الملف غير موجود</h3>
+            </div>
+        `;
+        return;
+    }
+    
+    // ✅ تحديث العنوان الثابت باسم الفرض (بدون تغيير currentLessonSource)
+    updateSectionInfo('activities-notebook', file.name);
+    
+    // 🔥 استخراج الصور من مصادر مختلفة
+    let images = [];
+    
+    if (file.images && Array.isArray(file.images)) {
+        images = file.images;
+        console.log(`✅ وجد ${images.length} صورة في file.images`);
+    } else if (file.content && file.content.images && Array.isArray(file.content.images)) {
+        images = file.content.images;
+        console.log(`✅ وجد ${images.length} صورة في file.content.images`);
+    } else if (file.content && typeof file.content === 'object') {
+        console.log('🔍 البحث عن صور في:', Object.keys(file.content));
+        if (Array.isArray(file.content)) {
+            images = file.content;
+        } else if (file.content.pages) {
+            images = file.content.pages;
+        } else if (file.content.data) {
+            images = file.content.data;
+        }
+    }
+    
+    if (images.length === 0) {
+        console.warn('⚠️ لا توجد صور في هذا الفرض');
+        displayElement.innerHTML = `
+            <div class="empty-content-message">
+                <i class="far fa-file-alt"></i>
+                <h3 style="color: #7f8c8d;">لا توجد صور في هذا الفرض</h3>
+                <p>الملف: ${file.name}</p>
+                <p style="font-size: 0.8rem; color: #999; margin-top: 10px;">
+                    نوع الملف: ${file.fileType || 'غير معروف'}<br>
+                    هل الملف يحتوي على صور؟
+                </p>
+            </div>
+        `;
+        return;
+    }
+    
+    // ✅ عرض الصور
+    let displayHtml = `
+        <h4 style="color: #2c3e50; margin-bottom: 20px; text-align: right;">
+            <i class="fas fa-file-alt"></i> عرض الفرض: ${file.name}
+        </h4>
+        <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+            <span style="color: #27ae60;">✅ تم العثور على ${images.length} صفحة</span>
+        </div>
+    `;
+    
+    displayHtml += '<div class="image-full-grid">';
+    images.forEach((image, index) => {
+        const pageNumber = image.number || image.pageNumber || image.page || (index + 1);
+        const imageUrl = image.url || image.src || image.data;
+        const imageName = image.fileName || image.name || file.name;
+        
+        displayHtml += `
+            <div class="image-full-item">
+                <img src="${imageUrl}" alt="صفحة ${pageNumber}" 
+                     onclick="openFullImageViewer('${imageUrl}', '${imageName} - صفحة ${pageNumber}')"
+                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'><rect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/><text x=\'50%\' y=\'50%\' font-size=\'14\' text-anchor=\'middle\' fill=\'%23999\'>خطأ في تحميل الصورة</text></svg>'">
+                <div class="image-full-label">
+                    <div class="title">${imageName}</div>
+                    <div class="subtitle">صفحة ${pageNumber}</div>
+                </div>
+            </div>
+        `;
+    });
+    displayHtml += '</div>';
+    
+    displayElement.innerHTML = displayHtml;
+    showContentSection('activities-notebook');
+    
+    showStatusMessage(`✅ تم عرض الفرض: ${file.name} (${images.length} صفحة)`, 'success');
+}
+function displayAllNotebookImages(activeFileId = null) {
+    const displayElement = document.getElementById('notebookImagesDisplay');
+    
+    if (!displayElement) return;
+    
+    // 🔥 إذا لم يحدد ملف نشط، استخدم currentLessonSource
+    if (!activeFileId) {
+        activeFileId = lessonData.currentLessonSource;
+    }
+    
+    // فصل الملفات حسب النوع
+    const notebookFiles = lessonData.importedFiles.filter(f => f.type === 'notebook');
+    const homeworkFiles = lessonData.importedFiles.filter(f => f.type === 'homework');
+    const lessonFiles = lessonData.importedFiles.filter(f => f.type === 'lesson');
+    
+    // 🔥 الملف النشط
+    const activeFile = lessonData.importedFiles.find(f => f.id === activeFileId);
+    
+    console.log('📊 عرض الملف النشط:', activeFile?.name || 'لا يوجد');
+    
+    // ✅ تحديث العنوان الثابت إذا كان هناك ملف نشط
+    if (activeFile) {
+        updateSectionInfo('activities-notebook', activeFile.name);
+    }
+    
+    if (!activeFile && notebookFiles.length === 0 && homeworkFiles.length === 0) {
+        displayElement.innerHTML = `
+            <div class="empty-content-message">
+                <i class="far fa-images"></i>
+                <h3 style="color: #7f8c8d;">لا توجد كراسات أنشطة أو فروض</h3>
+                <p>قم باستيراد ملفات PDF أو JSON لعرضها هنا</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let displayHtml = '';
+    
+    // 🔥 عرض الملف النشط فقط إذا كان كراس أنشطة
+    if (activeFile && activeFile.type === 'notebook') {
+        displayHtml += `<h4 style="color: #2c3e50; margin-bottom: 20px; text-align: right;">
+            <i class="fas fa-book"></i> عرض: ${activeFile.name}
+        </h4>`;
+        
+        const isActive = lessonData.currentLessonSource === activeFile.id;
+        displayHtml += `
+            <div style="margin-bottom: 30px; border: 2px solid ${isActive ? '#3498db' : '#eee'}; 
+                       border-radius: 10px; overflow: hidden; background: white;">
+                <div style="background: ${isActive ? '#3498db' : '#f8f9fa'}; 
+                          color: ${isActive ? 'white' : '#2c3e50'}; padding: 15px; 
+                          font-weight: bold; font-size: 1.1rem; display: flex; justify-content: space-between;">
+                    <span><i class="fas fa-book" style="margin-left: 10px;"></i> ${activeFile.name}</span>
+                    ${isActive ? '<span style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 15px;">✓ المصدر</span>' : ''}
+                </div>`;
+        
+        if (activeFile.images && activeFile.images.length > 0) {
+            displayHtml += `
+                <div style="padding: 15px;">
+                    <div class="image-full-grid">
+                        ${activeFile.images.map(img => {
+                            const displayNumber = img.number || img.pageNumber || '?';
+                            return `
+                                <div class="image-full-item">
+                                    <img src="${img.url}" alt="صفحة ${displayNumber}" 
+                                         onclick="openFullImageViewer('${img.url}', '${activeFile.name} - صفحة ${displayNumber}')">
+                                    <div class="image-full-label">
+                                        <div class="title">${activeFile.name}</div>
+                                        <div class="subtitle">صفحة ${displayNumber}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        } else {
+            displayHtml += `<div style="padding: 30px; text-align: center; color: #666;">لا توجد صور في هذا الملف</div>`;
+        }
+        
+        displayHtml += '</div>';
+    }
+    
+    // 🔥 إذا لم يكن هناك ملف نشط أو كان الملف النشط ليس كراس، اعرض الفروض فقط
+    if (!activeFile || activeFile.type !== 'notebook') {
+        if (homeworkFiles.length > 0) {
+            displayHtml += '<h4 style="color: #2c3e50; margin-bottom: 20px; text-align: right; margin-top: 40px;"><i class="fas fa-file-alt"></i> الفروض</h4>';
+            
+            homeworkFiles.forEach(file => {
+                displayHtml += `
+                    <div style="margin-bottom: 30px; border: 2px solid #eee; border-radius: 10px; overflow: hidden; background: white;">
+                        <div style="background: #f8f9fa; color: #2c3e50; padding: 15px; font-weight: bold; font-size: 1.1rem;">
+                            <i class="fas fa-file-alt" style="margin-left: 10px;"></i> ${file.name}
+                        </div>
+                        <div style="padding: 15px;">
+                            <button class="btn btn-primary" onclick="displayHomeworkFromList('${file.id}')" style="width: 100%;">
+                                <i class="fas fa-eye"></i> عرض الفرض
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    }
+    
+    // 🔥 عرض رسالة للدروس المستوردة
+    if (lessonFiles.length > 0) {
+        displayHtml += `
+            <div style="margin-top: 30px; padding: 15px; background: #e8f4fc; border-radius: 8px; border-right: 4px solid #3498db;">
+                <h5 style="color: #2c3e50; margin-bottom: 10px;"><i class="fas fa-info-circle"></i> الدروس المستوردة</h5>
+                <p style="color: #555; margin-bottom: 5px;">هذه الدروس متاحة كمصدر للصفحات داخل الأقسام:</p>
+                <ul style="margin: 0; padding-right: 20px; color: #666;">
+                    ${lessonFiles.map(file => `<li>📁 ${file.name} (${file.images?.length || 0} صفحة)</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+    
+    displayElement.innerHTML = displayHtml;
+}
+ function displayHomeworkFromList(fileId) {
+    const file = lessonData.importedFiles.find(f => f.id === fileId);
+    if (file) {
+        displayHomework(file);
+    }
+}
+        // =============== إدارة العناوين ===============
+        function editTitle(sectionType, index) {
+            currentEditingSection = sectionType;
+            currentEditingTitle = index;
+            
+            const titleData = lessonData[sectionType][index];
+            createEditModal(sectionType, index, titleData);
+            showContentSection(sectionType);
+        }
+
+function createEditModal(sectionType, index, titleData) {
+    const existingModal = document.getElementById('editModal');
+    if (existingModal) existingModal.remove();
+    
+    const modal = document.createElement('div');
+    modal.id = 'editModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 2000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; width: 95%; max-width: 900px; max-height: 95vh; 
+                   border-radius: 10px; overflow: hidden; display: flex; flex-direction: column;">
+            <div style="background: #2c3e50; color: white; padding: 20px; display: flex; 
+                       justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0;">تعديل: ${titleData.title}</h3>
+                <button onclick="closeEditModal()" style="background: transparent; border: none; 
+                        color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            
+            <div style="padding: 20px; overflow-y: auto; flex: 1;">
+                <div class="form-group">
+                    <label class="edit-modal-label">العنوان</label>
+                    <input type="text" id="editTitleInput" value="${titleData.title}" 
+                           class="edit-modal-input" placeholder="أدخل العنوان">
+                </div>
+                
+                <!-- 🔥 قسم صفحات كراس الأنشطة -->
+                <div class="edit-modal-section">
+                    <div class="form-group">
+                        <label class="edit-modal-label"><i class="fas fa-file-image"></i> صفحات من كراس الأنشطة (مثال: 1-5 أو 1,3,5)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="editPagesInput" placeholder="أرقام الصفحات" 
+                                   value="${titleData.notebookPages.join(',')}"
+                                   class="edit-modal-input">
+                            <button onclick="addNotebookPages()" style="background: #3498db; color: white; 
+                                    border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 1rem;">
+                                إضافة
+                            </button>
+                        </div>
+                        ${lessonData.notebookImages.length === 0 ? 
+                            '<div style="color: #e74c3c; margin-top: 5px; font-size: 0.9rem;">⚠️ لم يتم تحويل أي صور من كراس الأنشطة</div>' : 
+                            '<div style="color: #27ae60; margin-top: 5px; font-size: 0.9rem;">✓ متوفر ' + lessonData.notebookImages.length + ' صورة من كراس الأنشطة</div>'
+                        }
+                    </div>
+                </div>
+                
+                <!-- 🔥 قسم الصور الإضافية -->
+                <div class="edit-modal-section">
+                    <div class="form-group">
+                        <label class="edit-modal-label"><i class="fas fa-image"></i> تحميل صور إضافية</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="file" id="additionalImagesInput" multiple accept="image/*" 
+                                   class="edit-modal-input" style="padding: 8px !important;">
+                            <button onclick="addAdditionalImages()" style="background: #2ecc71; color: white; 
+                                    border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 1rem;">
+                                رفع صور
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 🔥 قسم الفيديوهات -->
+                <div class="edit-modal-section">
+                    <div class="form-group">
+                        <label class="edit-modal-label"><i class="fas fa-video"></i> تحميل فيديو هاتف</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="file" id="videoInput" accept="video/*" 
+                                   class="edit-modal-input" style="padding: 8px !important;">
+                            <button onclick="addVideo()" style="background: #9b59b6; color: white; 
+                                    border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 1rem;">
+                                رفع فيديو
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 🔥 🔥 🔥 القسم الجديد: ترتيب الوسائط -->
+                <div class="edit-modal-section" style="margin-top: 20px;">
+                    <div class="form-group">
+                        <label class="edit-modal-label" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span><i class="fas fa-list-ol"></i> ترتيب الوسائط</span>
+                            <button type="button" onclick="autoReorderMedia()" 
+                                    style="background: #3498db; color: white; border: none; padding: 5px 10px; 
+                                           border-radius: 4px; font-size: 0.8rem; cursor: pointer;">
+                                <i class="fas fa-sort-alpha-down"></i> ترتيب تلقائي
+                            </button>
+                        </label>
+                        
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                            <div id="mediaSequenceList" style="min-height: 100px; max-height: 300px; overflow-y: auto;">
+                                ${renderMediaSequenceList(titleData)}
+                            </div>
+                            
+                            <div style="margin-top: 15px; text-align: center; color: #666; font-size: 0.9rem;">
+                                <i class="fas fa-info-circle"></i> استخدم الأسهم لترتيب الوسائط كما تريد
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 🔥 قسم معلومات إضافية -->
+                <div style="background: #e8f4fc; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #3498db;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-lightbulb"></i> تلميحات
+                    </h4>
+                    <ul style="color: #555; margin: 0; padding-right: 20px; line-height: 1.6;">
+                        <li>أضف صفحات الكراس باستخدام الأرقام (مثال: 1-5 أو 1,3,5)</li>
+                        <li>استخدم أزرار <strong>▲</strong> و <strong>▼</strong> لترتيب الوسائط</li>
+                        <li>زر <strong>✖</strong> يزيل الوسيط من الترتيب فقط (لا يحذف البيانات)</li>
+                        <li>زر <strong>ترتيب تلقائي</strong> يرتب صفحات الكراس أولاً</li>
+                        <li>التعديلات لا تحفظ إلا بعد النقر على <strong>حفظ التعديلات</strong></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; display: flex; justify-content: flex-end; gap: 15px;">
+                <button onclick="closeEditModal()" style="background: #95a5a6; color: white; 
+                        border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 1rem;">
+                    إلغاء
+                </button>
+                <button onclick="saveTitleEdits()" style="background: #3498db; color: white; 
+                        border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 1rem;">
+                    <i class="fas fa-save"></i> حفظ التعديلات
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+        function renderSelectedPages(pages) {
+            if (!pages || pages.length === 0) {
+                return '<div style="color: #999; text-align: center; padding: 10px;">لم يتم إضافة أي صفحات من كراس الأنشطة</div>';
+            }
+            
+            let html = '';
+            pages.forEach(pageNum => {
+                html += `
+                    <div style="background: #3498db; color: white; padding: 8px 15px; border-radius: 20px; 
+                              display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: bold;">
+                        <i class="fas fa-file-image"></i> صفحة ${pageNum}
+                        <button onclick="removePage(${pageNum})" style="background: transparent; border: none; 
+                                color: white; cursor: pointer; font-size: 1rem; margin-right: 5px;">&times;</button>
+                    </div>
+                `;
+            });
+            return html;
+        }
+
+        function renderAdditionalImages(images) {
+            if (!images || images.length === 0) {
+                return '<div style="color: #999; text-align: center; padding: 20px;">لم يتم رفع أي صور إضافية</div>';
+            }
+            
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; margin-top: 10px;">';
+            images.forEach((img, index) => {
+                html += `
+                    <div style="position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <img src="${img.url}" style="width: 100%; height: 100px; object-fit: cover;">
+                        <button onclick="removeAdditionalImage(${index})" style="position: absolute; top: 5px; right: 5px; 
+                                background: #e74c3c; color: white; border: none; width: 25px; height: 25px; 
+                                border-radius: 50%; cursor: pointer; font-size: 1rem;">&times;</button>
+                        <div style="padding: 5px; font-size: 0.8rem; text-align: center; background: #f8f9fa;">
+                            ${img.name.length > 15 ? img.name.substring(0, 15) + '...' : img.name}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function renderVideos(videos) {
+            if (!videos || videos.length === 0) {
+                return '<div style="color: #999; text-align: center; padding: 20px;">لم يتم رفع أي فيديوهات</div>';
+            }
+            
+            let html = '<div style="display: flex; flex-direction: column; gap: 15px;">';
+            videos.forEach((video, index) => {
+                html += `
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; display: flex; 
+                               justify-content: space-between; align-items: center; border-left: 4px solid #9b59b6;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                                <i class="fas fa-video" style="color: #9b59b6; margin-left: 10px; font-size: 1.2rem;"></i>
+                                <span style="font-weight: bold; font-size: 1.1rem;">${video.name}</span>
+                            </div>
+                            <div style="font-size: 0.9rem; color: #7f8c8d;">
+                                ${(video.size / (1024 * 1024)).toFixed(2)} MB • ${video.type}
+                            </div>
+                        </div>
+                        <button onclick="removeVideo(${index})" style="background: #e74c3c; color: white; 
+                                border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 0.9rem;">
+                            حذف
+                        </button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('editModal');
+            if (modal) modal.remove();
+            currentEditingSection = null;
+            currentEditingTitle = null;
+        }
+        
+        function renderMediaSequenceList(titleData) {
+    if (!titleData || !titleData.mediaSequence || titleData.mediaSequence.length === 0) {
+        return `
+            <div style="text-align: center; padding: 30px; color: #999;">
+                <i class="far fa-folder-open" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                <p>لا توجد وسائط مرتبة بعد</p>
+                <p style="font-size: 0.8rem; margin-top: 5px;">أضف صفحات أو صوراً أو فيديوهات أولاً</p>
+            </div>
+        `;
+    }
+    
+    let html = '';
+    
+    titleData.mediaSequence.forEach((item, index) => {
+        let mediaLabel = '';
+        let icon = '';
+        let color = '';
+        
+        if (item.type === 'notebook') {
+            mediaLabel = `صفحة ${item.id} من الكراس`;
+            icon = 'fas fa-book';
+            color = '#3498db';
+        } else if (item.type === 'image') {
+            mediaLabel = `صورة: ${item.data?.name || item.id}`;
+            icon = 'fas fa-image';
+            color = '#2ecc71';
+        } else if (item.type === 'video') {
+            mediaLabel = `فيديو: ${item.data?.name || item.id}`;
+            icon = 'fas fa-video';
+            color = '#9b59b6';
+        }
+        
+        html += `
+            <div class="media-sequence-item" data-index="${index}" 
+                 style="display: flex; justify-content: space-between; align-items: center; 
+                        padding: 12px; background: white; margin-bottom: 8px; border-radius: 6px; 
+                        border-left: 4px solid ${color}; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                
+                <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                    <div style="width: 30px; height: 30px; background: ${color}; color: white; 
+                                border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+                                font-weight: bold;">${index + 1}</div>
+                    
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="${icon}" style="color: ${color};"></i>
+                            <span style="font-weight: 500;">${mediaLabel}</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #777; margin-top: 3px;">
+                            ${item.type === 'notebook' ? 'كراس الأنشطة' : 
+                              item.type === 'image' ? 'صورة إضافية' : 'فيديو'}
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 5px;">
+                    <button onclick="moveMediaUp(${index})" 
+                            style="background: ${index === 0 ? '#bdc3c7' : '#3498db'}; 
+                                   color: white; border: none; width: 30px; height: 30px; 
+                                   border-radius: 4px; cursor: ${index === 0 ? 'not-allowed' : 'pointer'};
+                                   display: flex; align-items: center; justify-content: center;"
+                            ${index === 0 ? 'disabled' : ''}>
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    
+                    <button onclick="moveMediaDown(${index})" 
+                            style="background: ${index === titleData.mediaSequence.length - 1 ? '#bdc3c7' : '#3498db'}; 
+                                   color: white; border: none; width: 30px; height: 30px; 
+                                   border-radius: 4px; cursor: ${index === titleData.mediaSequence.length - 1 ? 'not-allowed' : 'pointer'};
+                                   display: flex; align-items: center; justify-content: center;"
+                            ${index === titleData.mediaSequence.length - 1 ? 'disabled' : ''}>
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                    
+                    
+<button onclick="deleteMediaItemFromContent(${index})"
+                            style="background: #e74c3c; color: white; border: none; width: 30px; height: 30px; 
+                                   border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    return html;
+}
+        // دالة رفع وسيط لأعلى
+function moveMediaUp(index) {
+    if (!currentEditingSection || currentEditingTitle === null) return;
+    
+    const titleData = lessonData[currentEditingSection][currentEditingTitle];
+    if (!titleData.mediaSequence || index <= 0) return;
+    
+    // تبديل المواقع
+    const temp = titleData.mediaSequence[index];
+    titleData.mediaSequence[index] = titleData.mediaSequence[index - 1];
+    titleData.mediaSequence[index - 1] = temp;
+    
+    // تحديث العرض
+    updateMediaSequenceDisplay();
+    showStatusMessage('تم رفع الوسيط لأعلى', 'info');
+}
+
+// دالة خفض وسيط لأسفل
+function moveMediaDown(index) {
+    if (!currentEditingSection || currentEditingTitle === null) return;
+    
+    const titleData = lessonData[currentEditingSection][currentEditingTitle];
+    if (!titleData.mediaSequence || index >= titleData.mediaSequence.length - 1) return;
+    
+    // تبديل المواقع
+    const temp = titleData.mediaSequence[index];
+    titleData.mediaSequence[index] = titleData.mediaSequence[index + 1];
+    titleData.mediaSequence[index + 1] = temp;
+    
+    // تحديث العرض
+    updateMediaSequenceDisplay();
+    showStatusMessage('تم خفض الوسيط لأسفل', 'info');
+}
+
+// 🔥 أضف هذا الكود قبل deleteMediaItemFromContent
+
+function getMediaName(mediaItem) {
+    if (!mediaItem) {
+        console.warn('⚠️ mediaItem غير محدد في getMediaName');
+        return 'وسيط غير معروف';
+    }
+    
+    console.log('🔍 getMediaName استدعيت مع:', mediaItem);
+    
+    // صفحة من كراس الأنشطة
+    if (mediaItem.type === 'notebook') {
+        return `صفحة ${mediaItem.id} من الكراس`;
+    }
+    
+    // صورة إضافية
+    if (mediaItem.type === 'image') {
+        const name = mediaItem.data?.name || mediaItem.id || 'صورة';
+        return `صورة: ${name}`;
+    }
+    
+    // فيديو
+    if (mediaItem.type === 'video') {
+        const name = mediaItem.data?.name || mediaItem.id || 'فيديو';
+        return `فيديو: ${name}`;
+    }
+    
+    // نوع غير معروف
+    return `وسيط: ${JSON.stringify(mediaItem).substring(0, 50)}...`;
+}
+
+// 🔥 ثم تأتي بعدها دالة deleteMediaItemFromContent
+function deleteMediaItemFromContent(index) {
+    // ... الكود الذي لديك
+}
+
+// دالة حذف وسيط من التسلسل (ليس من البيانات)
+
+// 🔥 أضف هذه الدالة الجديدة باسم مختلف
+function deleteMediaItemFromContent(index) {
+    if (!currentEditingSection || currentEditingTitle === null) return;
+    
+    const titleData = lessonData[currentEditingSection][currentEditingTitle];
+    if (!titleData.mediaSequence) return;
+    
+    const removedItem = titleData.mediaSequence[index];
+    const mediaName = getMediaName(removedItem);
+    
+    if (confirm(`حذف "${mediaName}" من المحتوى تماماً؟`)) {
+        // 1. حذف من mediaSequence
+        titleData.mediaSequence.splice(index, 1);
+        
+        // 2. حذف من المخازن الأصلية
+        if (removedItem.type === 'notebook') {
+            const pageIndex = titleData.notebookPages.indexOf(removedItem.id);
+            if (pageIndex > -1) {
+                titleData.notebookPages.splice(pageIndex, 1);
+            }
+        } 
+        else if (removedItem.type === 'image' && titleData.additionalImages) {
+            const imgIndex = titleData.additionalImages.findIndex(img => img.name === removedItem.id);
+            if (imgIndex > -1) {
+                titleData.additionalImages.splice(imgIndex, 1);
+            }
+        }
+        else if (removedItem.type === 'video' && titleData.videos) {
+            const videoIndex = titleData.videos.findIndex(vid => vid.name === removedItem.id);
+            if (videoIndex > -1) {
+                const video = titleData.videos[videoIndex];
+                if (video.url && video.url.startsWith('blob:')) {
+                    URL.revokeObjectURL(video.url);
+                }
+                titleData.videos.splice(videoIndex, 1);
+            }
+        }
+        
+        // 3. تحديث حقول الإدخال
+        const pagesInput = document.getElementById('editPagesInput');
+        if (pagesInput) {
+            pagesInput.value = titleData.notebookPages.join(',');
+        }
+        
+        // 4. تحديث العرض
+        updateMediaSequenceDisplay();
+        
+        showStatusMessage(`تم حذف ${mediaName}`, 'success');
+    }
+}
+// دالة تحديث العرض
+function updateMediaSequenceDisplay() {
+    if (!currentEditingSection || currentEditingTitle === null) return;
+    
+    const titleData = lessonData[currentEditingSection][currentEditingTitle];
+    const displayElement = document.getElementById('mediaSequenceList');
+    
+    if (displayElement) {
+        displayElement.innerHTML = renderMediaSequenceList(titleData);
+    }
+}
+
+// دالة الترتيب التلقائي
+function autoReorderMedia() {
+    if (!currentEditingSection || currentEditingTitle === null) return;
+    
+    const titleData = lessonData[currentEditingSection][currentEditingTitle];
+    if (!titleData.mediaSequence) return;
+    
+    // فصل الوسائط حسب النوع
+    const notebookItems = titleData.mediaSequence.filter(item => item.type === 'notebook');
+    const imageItems = titleData.mediaSequence.filter(item => item.type === 'image');
+    const videoItems = titleData.mediaSequence.filter(item => item.type === 'video');
+    
+    // ترتيب صفحات الكراس حسب الرقم
+    notebookItems.sort((a, b) => a.id - b.id);
+    
+    // إعادة تجميع مع الاحتفاظ بترتيب الصور والفيديوهات
+    titleData.mediaSequence = [...notebookItems, ...imageItems, ...videoItems];
+    
+    // تحديث العرض
+    updateMediaSequenceDisplay();
+    showStatusMessage('تم الترتيب التلقائي: صفحات الكراس أولاً، ثم الصور، ثم الفيديوهات', 'success');
+}
+function saveTitleEdits() {
+    console.log('💾 بدء حفظ التعديلات...');
+    
+    try {
+        // التحقق من البيانات
+        if (!currentEditingSection || currentEditingTitle === null) {
+            showStatusMessage('❌ لا يمكن الحفظ - معلومات التعديل غير صحيحة', 'error');
+            return;
+        }
+        
+        const titleInput = document.getElementById('editTitleInput');
+        if (!titleInput) {
+            showStatusMessage('❌ لا يمكن العثور على حقل العنوان', 'error');
+            return;
+        }
+        
+        const titleData = lessonData[currentEditingSection][currentEditingTitle];
+        if (!titleData) {
+            showStatusMessage('❌ بيانات العنوان غير موجودة', 'error');
+            return;
+        }
+        
+        // تحديث العنوان فقط
+        const oldTitle = titleData.title;
+        const newTitle = titleInput.value.trim();
+        
+        if (newTitle !== oldTitle) {
+            titleData.title = newTitle;
+            showStatusMessage(`✅ تم تغيير العنوان إلى "${newTitle}"`, 'success');
+        } else {
+            showStatusMessage('✅ تم حفظ التعديلات', 'success');
+        }
+        
+        // 🔥 لا تغلق النافذة - فقط تُحدث العرض الخارجي
+        renderCleanTitlesList(currentEditingSection);
+        updateCleanDisplay(currentEditingSection);
+        
+        // 🔥 تحديث قائمة الوسائط داخل النافذة أيضاً
+        updateMediaSequenceDisplay();
+        
+        console.log('💾 تم الحفظ (النافذة مفتوحة)');
+        
+    } catch (error) {
+        console.error('❌ خطأ في الحفظ:', error);
+        showStatusMessage(`❌ خطأ في الحفظ: ${error.message}`, 'error');
+    }
+}
+        function deleteTitle(sectionType, index) {
+            if (!confirm('هل أنت متأكد من حذف هذا العنوان؟')) return;
+            
+            lessonData[sectionType].splice(index, 1);
+            renderCleanTitlesList(sectionType);
+            updateCleanDisplay(sectionType);
+            updateSystemInfo();
+            showStatusMessage('تم حذف العنوان بنجاح', 'success');
+        }
+
+        // =============== إضافة الوسائط مع تسلسل الإدخال ===============
+
+function addNotebookPages() {
+    if (!currentEditingSection || currentEditingTitle === null) return;
+    
+    if (lessonData.notebookImages.length === 0) {
+        alert('⚠️ الرجاء تحويل ملفات PDF إلى صور أولاً');
+        return;
+    }
+    
+    const pagesInput = document.getElementById('editPagesInput');
+    const pagesText = pagesInput.value.trim();
+    
+    if (!pagesText) {
+        alert('الرجاء إدخال أرقام الصفحات (مثال: 1-5 أو 1,3,5)');
+        return;
+    }
+    
+    const titleData = lessonData[currentEditingSection][currentEditingTitle];
+    
+    // 🔥 حفظ القيمة القديمة لعرضها في حقل الإدخال
+    const oldPages = [...(titleData.notebookPages || [])];
+    
+    const newPages = parsePageNumbers(pagesText);
+    const maxPage = lessonData.notebookImages.length;
+    let addedCount = 0;
+    
+    newPages.forEach(pageNum => {
+        if (pageNum > 0 && pageNum <= maxPage) {
+            if (!titleData.notebookPages.includes(pageNum)) {
+                titleData.notebookPages.push(pageNum);
+                
+                // إضافة إلى mediaSequence إذا لم تكن موجودة
+                if (!titleData.mediaSequence) {
+                    titleData.mediaSequence = [];
+                }
+                
+                const existsInSequence = titleData.mediaSequence.some(item => 
+                    item.type === 'notebook' && item.id === pageNum
+                );
+                
+                if (!existsInSequence) {
+                    const image = lessonData.notebookImages.find(img => img.number === pageNum);
+                    if (image) {
+                        titleData.mediaSequence.push({
+                            type: 'notebook',
+                            id: pageNum,
+                            data: image,
+                            timestamp: Date.now()
+                        });
+                    }
+                }
+                
+                addedCount++;
+            }
+        } else {
+            alert(`تحذير: الصفحة ${pageNum} غير موجودة في كراس الأنشطة (الأقصى: ${maxPage})`);
+        }
+    });
+    
+    if (addedCount > 0) {
+        titleData.notebookPages.sort((a, b) => a - b);
+        
+        // 🔥 تحديث حقل الإدخال بالصفحات الجديدة
+        pagesInput.value = titleData.notebookPages.join(',');
+        
+        // 🔥 تحديث عرض قائمة الوسائط فوراً
+        updateMediaSequenceDisplay();
+        
+        showStatusMessage(`تم إضافة ${addedCount} صفحة جديدة`, 'success');
+    } else {
+        showStatusMessage('جميع الصفحات المحددة موجودة مسبقاً', 'info');
+    }
+    
+    // لا تُفرغ الحقل حتى يرى المستخدم ما أضافه
+    // pagesInput.value = ''; // 🔥 علق هذا السطر
+}
+        function parsePageNumbers(text) {
+            const pages = new Set();
+            const parts = text.split(',');
+            
+            parts.forEach(part => {
+                const trimmed = part.trim();
+                if (trimmed.includes('-')) {
+                    const [start, end] = trimmed.split('-').map(num => parseInt(num.trim()));
+                    if (!isNaN(start) && !isNaN(end)) {
+                        for (let i = Math.min(start, end); i <= Math.max(start, end); i++) {
+                            pages.add(i);
+                        }
+                    }
+                } else {
+                    const num = parseInt(trimmed);
+                    if (!isNaN(num)) {
+                        pages.add(num);
+                    }
+                }
+            });
+            
+            return Array.from(pages).sort((a, b) => a - b);
+        }
+
+        function removePage(pageNum) {
+            if (!currentEditingSection || currentEditingTitle === null) return;
+            
+            const titleData = lessonData[currentEditingSection][currentEditingTitle];
+            const index = titleData.notebookPages.indexOf(pageNum);
+            
+            if (index > -1) {
+                titleData.notebookPages.splice(index, 1);
+                // إزالة من تسلسل الوسائط
+                removeFromMediaSequence(titleData, 'notebook', pageNum);
+                document.getElementById('selectedPagesDisplay').innerHTML = renderSelectedPages(titleData.notebookPages);
+            }
+        }
+        
+async function addAdditionalImages() {
+    if (!currentEditingSection || currentEditingTitle === null) return;
+    
+    const input = document.getElementById('additionalImagesInput');
+    const files = Array.from(input.files);
+    
+    if (files.length === 0) {
+        alert('الرجاء اختيار صور للرفع');
+        return;
+    }
+    
+    const titleData = lessonData[currentEditingSection][currentEditingTitle];
+    const existingImages = titleData.additionalImages || [];
+    const existingNames = existingImages.map(img => img.name);
+    
+    let addedCount = 0;
+    const newImages = [];
+    
+    for (const file of files) {
+        // تجنب التكرار
+        if (existingNames.includes(file.name)) {
+            console.log(`تخطي: ${file.name} موجودة مسبقاً`);
+            continue;
+        }
+        
+        const url = await fileToBase64(file);
+        const imageData = {
+            name: file.name,
+            url: url,
+            type: file.type,
+            size: file.size
+        };
+        
+        // إضافة إلى additionalImages
+        titleData.additionalImages.push(imageData);
+        newImages.push(imageData);
+        
+        // إضافة إلى mediaSequence
+        if (!titleData.mediaSequence) {
+            titleData.mediaSequence = [];
+        }
+        
+        titleData.mediaSequence.push({
+            type: 'image',
+            id: file.name,
+            data: imageData,
+            timestamp: Date.now()
+        });
+        
+        addedCount++;
+    }
+    
+    if (addedCount > 0) {
+        // 🔥 تحديث عرض قائمة الوسائط فوراً
+        updateMediaSequenceDisplay();
+        
+        showStatusMessage(`تم إضافة ${addedCount} صورة جديدة`, 'success');
+    } else {
+        showStatusMessage('جميع الصور المحددة موجودة مسبقاً', 'info');
+    }
+    
+    // 🔥 إفراغ حقل الملفات بعد الرفع
+    input.value = '';
+}
+        function removeAdditionalImage(index) {
+            if (!currentEditingSection || currentEditingTitle === null) return;
+            
+            const titleData = lessonData[currentEditingSection][currentEditingTitle];
+            titleData.additionalImages.splice(index, 1);
+            // إزالة من تسلسل الوسائط
+            removeFromMediaSequence(titleData, 'image', index);
+            document.getElementById('additionalImagesDisplay').innerHTML = renderAdditionalImages(titleData.additionalImages);
+        }
+async function addVideo() {
+    if (!currentEditingSection || currentEditingTitle === null) return;
+    
+    const input = document.getElementById('videoInput');
+    const file = input.files[0];
+    
+    if (!file) {
+        alert('الرجاء اختيار فيديو للرفع');
+        return;
+    }
+    
+    const titleData = lessonData[currentEditingSection][currentEditingTitle];
+    const existingVideos = titleData.videos || [];
+    const existingNames = existingVideos.map(vid => vid.name);
+    
+    if (existingNames.includes(file.name)) {
+        alert(`الفيديو "${file.name}" موجود مسبقاً`);
+        input.value = '';
+        return;
+    }
+    
+    const url = URL.createObjectURL(file);
+    const base64 = await fileToBase64(file);
+    const videoData = {
+        name: file.name,
+        url: url,
+        base64: base64,
+        type: file.type,
+        size: file.size
+    };
+    
+    // إضافة إلى videos
+    titleData.videos.push(videoData);
+    
+    // إضافة إلى mediaSequence
+    if (!titleData.mediaSequence) {
+        titleData.mediaSequence = [];
+    }
+    
+    titleData.mediaSequence.push({
+        type: 'video',
+        id: file.name,
+        data: videoData,
+        timestamp: Date.now()
+    });
+    
+    // 🔥 تحديث عرض قائمة الوسائط فوراً
+    updateMediaSequenceDisplay();
+    
+    // إفراغ حقل الملفات
+    input.value = '';
+    
+    showStatusMessage(`تم إضافة فيديو جديد: ${file.name}`, 'success');
+}
+      
+        function removeVideo(index) {
+            if (!currentEditingSection || currentEditingTitle === null) return;
+            
+            const titleData = lessonData[currentEditingSection][currentEditingTitle];
+            
+            if (index < 0 || index >= titleData.videos.length) {
+                alert('فهرس الفيديو غير صالح');
+                return;
+            }
+            
+            const videoToDelete = titleData.videos[index];
+            
+            if (confirm(`هل تريد حذف الفيديو "${videoToDelete.name}"؟`)) {
+                if (videoToDelete.url && videoToDelete.url.startsWith('blob:')) {
+                    URL.revokeObjectURL(videoToDelete.url);
+                }
+                
+                titleData.videos.splice(index, 1);
+                // إزالة من تسلسل الوسائط
+                removeFromMediaSequence(titleData, 'video', index);
+                
+                const videosDisplayElement = document.getElementById('videosDisplay');
+                if (videosDisplayElement) {
+                    videosDisplayElement.innerHTML = renderVideos(titleData.videos);
+                }
+                
+                showStatusMessage(`تم حذف الفيديو: ${videoToDelete.name}`, 'success');
+            }
+        }
+
+        // =============== تحديث معلومات النظام ===============
+        function updateSystemInfo() {
+            const infoElement = document.getElementById('systemInfo');
+            if (!infoElement) return;
+            
+            const stats = {
+                notebookImages: lessonData.notebookImages.length,
+                importedFiles: lessonData.importedFiles.length,
+                pdfFiles: pdfFiles.length,
+                notebookFiles: lessonData.importedFiles.filter(f => f.type === 'notebook').length,
+                homeworkFiles: lessonData.importedFiles.filter(f => f.type === 'homework').length,
+                totalTitles: lessonData.launch.length + lessonData.content.length + lessonData.activities.length,
+                totalNotebookPages: [
+                    ...lessonData.launch.flatMap(item => item.notebookPages),
+                    ...lessonData.content.flatMap(item => item.notebookPages),
+                    ...lessonData.activities.flatMap(item => item.notebookPages)
+                ].length,
+                totalAdditionalImages: [
+                    ...lessonData.launch.flatMap(item => item.additionalImages),
+                    ...lessonData.content.flatMap(item => item.additionalImages),
+                    ...lessonData.activities.flatMap(item => item.additionalImages)
+                ].length,
+                totalVideos: [
+                    ...lessonData.launch.flatMap(item => item.videos),
+                    ...lessonData.content.flatMap(item => item.videos),
+                    ...lessonData.activities.flatMap(item => item.videos)
+                ].length,
+                hasNotebook: lessonData.notebook.trim().length > 0,
+                hasSource: lessonData.currentLessonSource !== null
+            };
+            
+            infoElement.innerHTML = `
+                <div class="system-stats">
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fas fa-images"></i> الصور المحولة</span>
+                        <span class="stat-value">${stats.notebookImages}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fas fa-file-import"></i> الملفات المستوردة</span>
+                        <span class="stat-value">${stats.importedFiles}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fas fa-file-pdf"></i> PDF في الانتظار</span>
+                        <span class="stat-value">${stats.pdfFiles}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fas fa-book"></i> كراسات الأنشطة</span>
+                        <span class="stat-value">${stats.notebookFiles}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fas fa-file-alt"></i> الفروض</span>
+                        <span class="stat-value">${stats.homeworkFiles}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fas fa-file-alt"></i> العناوين</span>
+                        <span class="stat-value">${stats.totalTitles}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fas fa-book"></i> صفحات من الكراس</span>
+                        <span class="stat-value">${stats.totalNotebookPages}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fas fa-image"></i> صور إضافية</span>
+                        <span class="stat-value">${stats.totalAdditionalImages}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fas fa-video"></i> فيديوهات</span>
+                        <span class="stat-value">${stats.totalVideos}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fas fa-book"></i> المدونة</span>
+                        <span class="stat-value">${stats.hasNotebook ? '✓ موجود' : '✗ غير موجود'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label"><i class="fas fa-database"></i> مصدر الصفحات</span>
+                        <span class="stat-value">${stats.hasSource ? '✓ محدد' : '✗ غير محدد'}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // =============== نظام الحفظ والاستيراد ===============
+        async function saveLessonAsFile() {
+            try {
+                if (!lessonData.metadata.title && lessonData.launch.length === 0 && 
+                    lessonData.content.length === 0 && lessonData.activities.length === 0) {
+                    alert('لا توجد بيانات لحفظها. الرجاء إدخال بعض البيانات أولاً.');
+                    return;
+                }
+                
+                const fileName = `درس-${lessonData.metadata.title || 'بدون-عنوان'}-${new Date().toISOString().split('T')[0]}.json`;
+                
+                const usedImages = new Set();
+                const allSections = [...lessonData.launch, ...lessonData.content, ...lessonData.activities];
+                
+                allSections.forEach(section => {
+                    if (Array.isArray(section.notebookPages)) {
+                        section.notebookPages.forEach(pageNum => {
+                            usedImages.add(pageNum);
+                        });
+                    }
+                });
+                
+                const usedNotebookImages = lessonData.notebookImages.filter(img => 
+                    usedImages.has(img.number)
+                );
+                
+                async function processSectionForExport(sectionArray) {
+                    const processedSections = [];
+                    
+                    for (const item of sectionArray) {
+                        const processedVideos = [];
+                        
+                        if (item.videos && Array.isArray(item.videos)) {
+                            for (const video of item.videos) {
+                                if (video.base64) {
+                                    processedVideos.push({
+                                        name: video.name,
+                                        base64: video.base64,
+                                        type: video.type,
+                                        size: video.size
+                                    });
+                                }
+                            }
+                        }
+                        
+                        processedSections.push({
+                            id: item.id,
+                            title: item.title,
+                            notebookPages: item.notebookPages,
+                            additionalImages: item.additionalImages,
+                            videos: processedVideos,
+                            mediaSequence: item.mediaSequence // حفظ تسلسل الوسائط
+                        });
+                    }
+                    
+                    return processedSections;
+                }
+                
+                const saveData = {
+                    version: '5.1',
+                    type: 'lesson',
+                    metadata: lessonData.metadata,
+                    notebookImages: usedNotebookImages,
+                    launch: await processSectionForExport(lessonData.launch),
+                    content: await processSectionForExport(lessonData.content),
+                    activities: await processSectionForExport(lessonData.activities),
+                    notebook: lessonData.notebook,
+                    savedAt: new Date().toISOString()
+                };
+                
+                const jsonData = JSON.stringify(saveData, null, 2);
+                const blob = new Blob([jsonData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.style.display = 'none';
+                
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 1000);
+                
+                const fileSizeMB = (blob.size / (1024 * 1024)).toFixed(2);
+                showStatusMessage(
+                    `✅ تم حفظ الدرس!\n📄 ${fileName}\n📦 ${fileSizeMB} MB`,
+                    'success'
+                );
+                
+            } catch (error) {
+                console.error('خطأ في حفظ الملف:', error);
+                showStatusMessage(`❌ حدث خطأ: ${error.message}`, 'error');
+            }
+        }
+
+        async function saveNotebookAsFile() {
+            if (lessonData.notebookImages.length === 0) {
+                alert('كراس الأنشطة فارغ. قم بتحويل بعض ملفات PDF أولاً.');
+                return;
+            }
+            
+            try {
+                const fileName = `كراس-الأنشطة-${new Date().toISOString().split('T')[0]}.json`;
+                
+                const notebookData = {
+                    version: '1.0',
+                    type: 'notebook-repository',
+                    totalImages: lessonData.notebookImages.length,
+                    images: lessonData.notebookImages,
+                    savedAt: new Date().toISOString()
+                };
+                
+                const jsonData = JSON.stringify(notebookData, null, 2);
+                const blob = new Blob([jsonData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 1000);
+                
+                const fileSizeMB = (blob.size / (1024 * 1024)).toFixed(2);
+                showStatusMessage(
+                    `💾 تم حفظ كراس الأنشطة!\n🖼️ ${lessonData.notebookImages.length} صورة\n📦 ${fileSizeMB} MB`,
+                    'success'
+                );
+                
+            } catch (error) {
+                console.error('خطأ في حفظ كراس الأنشطة:', error);
+                showStatusMessage(`❌ حدث خطأ: ${error.message}`, 'error');
+            }
+        }
+
+ // =============== دالة محسنة لحفظ الملف النشط (كراس أو فرض) ===============
+async function saveCurrentNotebookAsJson() {
+    try {
+        // ✅ البحث عن الملف النشط بطرق متعددة
+        let activeFile = null;
+        
+        // 1. البحث عن الملف المحدد في currentLessonSource
+        if (lessonData.currentLessonSource) {
+            activeFile = lessonData.importedFiles.find(f => f.id === lessonData.currentLessonSource);
+        }
+        
+        // 2. إذا لم يتم العثور، ابحث عن آخر ملف تم النقر عليه (الفروض)
+        if (!activeFile) {
+            // ابحث عن أي ملف تم عرضه مؤخراً (آخر ملف في القائمة)
+            const homeworkFiles = lessonData.importedFiles.filter(f => f.type === 'homework');
+            if (homeworkFiles.length > 0) {
+                activeFile = homeworkFiles[homeworkFiles.length - 1];
+            }
+        }
+        
+        // 3. إذا لم يتم العثور، خذ أي ملف في القائمة
+        if (!activeFile && lessonData.importedFiles.length > 0) {
+            activeFile = lessonData.importedFiles[lessonData.importedFiles.length - 1];
+        }
+        
+        if (!activeFile) {
+            alert('⚠️ الرجاء تحديد ملف أولاً من قائمة الملفات');
+            return;
+        }
+        
+        // تنظيف اسم الملف للحفظ
+        const cleanName = activeFile.name
+            .replace('.pdf', '')
+            .replace('.json', '')
+            .replace(/[^\w\s\u0600-\u06FF]/g, '-');
+        
+        const fileName = `${cleanName}-${new Date().toISOString().split('T')[0]}.json`;
+        
+        let exportData;
+        
+        if (activeFile.type === 'homework') {
+            // ✅ تصدير كفرض
+            exportData = {
+                version: '1.0',
+                type: 'homework',
+                name: activeFile.name,
+                images: activeFile.images || [],
+                uploadedAt: activeFile.uploadedAt,
+                savedAt: new Date().toISOString()
+            };
+            showStatusMessage(`📄 جاري حفظ الفرض: ${activeFile.name}`, 'info');
+        } else {
+            // ✅ تصدير ككراس أنشطة
+            exportData = {
+                version: '1.0',
+                type: 'notebook-repository',
+                totalImages: activeFile.images?.length || 0,
+                images: activeFile.images || [],
+                savedAt: new Date().toISOString()
+            };
+            showStatusMessage(`📚 جاري حفظ كراس الأنشطة: ${activeFile.name}`, 'info');
+        }
+        
+        const jsonData = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonData], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 1000);
+        
+        const fileSizeMB = (blob.size / (1024 * 1024)).toFixed(2);
+        showStatusMessage(
+            `✅ تم حفظ ${activeFile.type === 'homework' ? 'الفرض' : 'كراس الأنشطة'}!\n📄 ${fileName}\n📦 ${fileSizeMB} MB`,
+            'success'
+        );
+        
+    } catch (error) {
+        console.error('خطأ في حفظ الملف:', error);
+        showStatusMessage(`❌ حدث خطأ: ${error.message}`, 'error');
+    }
+}
+  async function importLessonFromFile() {
+    try {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        
+        // ✅ منع التكرار باستخدام once
+        input.onchange = async (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                const text = await file.text();
+                const importedData = JSON.parse(text);
+                
+                await loadImportedData(importedData);
+                showStatusMessage(`✅ تم استيراد الدرس من: ${file.name}`, 'success');
+            }
+        };
+        
+        input.click();
+        
+    } catch (error) {
+        console.error('خطأ في استيراد الملف:', error);
+        showStatusMessage(`❌ حدث خطأ: ${error.message}`, 'error');
+    }
+}
+async function loadImportedData(importedData) {
+    try {
+        console.log('📥 بدء تحميل البيانات المستوردة...');
+        
+        // 🔥 الإصلاح 1: الاحتفاظ بالبيانات القديمة من كراس الأنشطة
+        const oldNotebookImages = [...lessonData.notebookImages]; // حفظ الصور القديمة
+        const oldImportedFiles = [...lessonData.importedFiles]; // حفظ الملفات القديمة
+        const oldCurrentSource = lessonData.currentLessonSource; // حفظ المصدر القديم
+        
+        // 🔥 الإصلاح 2: إعادة تعيين البيانات بعناية
+        lessonData = {
+            metadata: { title: '', date: '', session: '' },
+            notebookImages: [...oldNotebookImages], // 🔥 الاحتفاظ بالصور القديمة
+            importedFiles: [...oldImportedFiles], // 🔥 الاحتفاظ بالملفات القديمة
+            launch: [],
+            content: [],
+            activities: [],
+            notebook: '',
+            currentLessonSource: oldCurrentSource // 🔥 الاحتفاظ بالمصدر القديم
+        };
+        
+        console.log(`💾 تم الاحتفاظ بـ ${oldNotebookImages.length} صورة من الكراس القديم`);
+        
+        if (importedData.metadata) {
+            lessonData.metadata = importedData.metadata;
+            document.getElementById('lessonDate').value = importedData.metadata.date || '';
+            document.getElementById('lessonTitle').value = importedData.metadata.title || '';
+            document.getElementById('lessonSession').value = importedData.metadata.session || '';
+            updateLessonInfo();
+        }
+        if (importedData.notebookImages && Array.isArray(importedData.notebookImages)) {
+    console.log(`➕ إضافة ${importedData.notebookImages.length} صورة من الدرس الجديد`);
+    
+    let addedCount = 0;
+    importedData.notebookImages.forEach(newImg => {
+        const exists = lessonData.notebookImages.some(
+            existingImg => existingImg.number === newImg.number
+        );
+        if (!exists) {
+            lessonData.notebookImages.push(newImg);
+            addedCount++;
+        }
+    });
+    
+    console.log(`✅ تم إضافة ${addedCount} صورة جديدة`);
+    
+    if (importedData.notebookImages.length > 0) {
+        const fileId = `imported-lesson-${Date.now()}`;
+        lessonData.importedFiles.push({
+            id: fileId,
+            name: importedData.metadata?.title || 'درس مستورد', // 🔥 اسم الدرس
+            type: 'lesson',  // 🔥 ✅ النوع الصحيح: درس، ليس كراس أنشطة
+            fileType: 'json',
+            size: JSON.stringify(importedData.notebookImages).length,
+            images: importedData.notebookImages,
+            uploadedAt: new Date().toISOString()
+        });
+        
+        // فقط إذا لم يكن هناك مصدر محدد مسبقاً
+        if (!lessonData.currentLessonSource) {
+            lessonData.currentLessonSource = fileId;
+        }
+    }
+}
+        // 🔥 دالة مساعدة لاستعادة الوسائط
+        function restoreSection(sectionArray) {
+            if (!sectionArray || !Array.isArray(sectionArray)) return [];
+            
+            return sectionArray.map(item => {
+                const restoredVideos = [];
+                
+                if (item.videos && Array.isArray(item.videos)) {
+                    item.videos.forEach(videoData => {
+                        if (videoData.base64 && videoData.base64.startsWith('data:')) {
+                            try {
+                                const blob = base64ToBlob(videoData.base64, videoData.type);
+                                if (blob) {
+                                    const videoUrl = URL.createObjectURL(blob);
+                                    restoredVideos.push({
+                                        name: videoData.name,
+                                        url: videoUrl,
+                                        base64: videoData.base64,
+                                        type: videoData.type,
+                                        size: videoData.size
+                                    });
+                                }
+                            } catch (error) {
+                                console.warn(`تعذر استعادة الفيديو ${videoData.name}:`, error);
+                            }
+                        }
+                    });
+                }
+                
+                return {
+                    id: item.id || `${Date.now()}-${Math.random()}`,
+                    title: item.title || 'عنوان بدون اسم',
+                    notebookPages: item.notebookPages || [],
+                    additionalImages: item.additionalImages || [],
+                    videos: restoredVideos,
+                    mediaSequence: item.mediaSequence || []
+                };
+            });
+        }
+        
+        // تحميل الأقسام
+        lessonData.launch = restoreSection(importedData.launch);
+        lessonData.content = restoreSection(importedData.content);
+        lessonData.activities = restoreSection(importedData.activities);
+        
+        if (importedData.notebook) {
+            lessonData.notebook = importedData.notebook;
+            document.getElementById('notebookText').value = importedData.notebook;
+        }
+        
+        // 🔥 تحديث العروض
+        ['launch', 'content', 'activities'].forEach(section => {
+            renderCleanTitlesList(section);
+            updateCleanDisplay(section);
+        });
+        
+        // 🔥 تحديث قائمة الملفات وعرض كراس الأنشطة
+        updateFilesList();
+        displayAllNotebookImages();
+        updateSystemInfo();
+        
+        console.log('📊 ملخص بعد التحميل:');
+        console.log(`- إجمالي الصور في notebookImages: ${lessonData.notebookImages.length}`);
+        console.log(`- الملفات في importedFiles: ${lessonData.importedFiles.length}`);
+        console.log(`- المصدر الحالي: ${lessonData.currentLessonSource ? 'موجود' : 'غير محدد'}`);
+        
+        showStatusMessage(`✅ تم تحميل الدرس بنجاح! (${lessonData.notebookImages.length} صورة متاحة)`, 'success');
+        
+    } catch (error) {
+        console.error('❌ خطأ في تحميل البيانات:', error);
+        showStatusMessage(`❌ فشل تحميل البيانات: ${error.message}`, 'error');
+        
+        // 🔥 في حالة الخطأ، حاول استعادة البيانات القديمة
+        try {
+            lessonData.notebookImages = oldNotebookImages;
+            lessonData.importedFiles = oldImportedFiles;
+            lessonData.currentLessonSource = oldCurrentSource;
+            displayAllNotebookImages();
+            updateSystemInfo();
+            console.log('🔄 تم استعادة البيانات القديمة بعد الخطأ');
+        } catch (restoreError) {
+            console.error('❌ فشل في استعادة البيانات:', restoreError);
+        }
+    }
+}
+function clearAllData() {
+    if (!confirm('⚠️ تحذير: هذا سيمسح جميع البيانات الحالية!\nهل أنت متأكد؟')) return;
+    
+    // 🔥 الإصلاح: الاحتفاظ بكراس الأنشطة (notebookImages و importedFiles)
+    const keepNotebookImages = [...lessonData.notebookImages];
+    const keepImportedFiles = [...lessonData.importedFiles];
+    const keepCurrentSource = lessonData.currentLessonSource;
+    
+    lessonData = {
+        metadata: { title: '', date: '', session: '' },
+        notebookImages: keepNotebookImages, // 🔥 الاحتفاظ بالصور
+        importedFiles: keepImportedFiles, // 🔥 الاحتفاظ بالملفات
+        launch: [],
+        content: [],
+        activities: [],
+        notebook: '',
+        currentLessonSource: keepCurrentSource // 🔥 الاحتفاظ بالمصدر
+    };
+    
+    // ... باقي الكود بدون تغيير ...
+    document.getElementById('lessonDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('lessonTitle').value = '';
+    document.getElementById('lessonSession').value = '';
+    document.getElementById('notebookText').value = '';
+    
+    ['launch', 'content', 'activities'].forEach(section => {
+        renderCleanTitlesList(section);
+        updateCleanDisplay(section);
+    });
+    
+    // 🔥 تحديث فقط (لأن notebookImages و importedFiles محفوظة)
+    updateFilesList();
+    displayAllNotebookImages();
+    updateSystemInfo();
+    
+    showStatusMessage('✅ تم مسح بيانات الدرس مع الاحتفاظ بكراس الأنشطة', 'success');
+}
+        // =============== عرض الصور الكامل ===============
+        function openFullImageViewer(url, title) {
+            const viewerContent = document.getElementById('viewerContent');
+            viewerContent.innerHTML = `
+                <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="text-align: center; margin-bottom: 20px; color: white;">
+                        <h3 style="margin: 0 0 10px 0;">${title}</h3>
+                        <p style="opacity: 0.8;">انقر خارج الصورة للإغلاق</p>
+                    </div>
+                    <img src="${url}" style="max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 5px;">
+                </div>
+            `;
+            document.getElementById('fileViewerModal').style.display = 'flex';
+        }
+        
+        window.saveCurrentHomeworkAsJson = saveCurrentNotebookAsJson;
+
+        // =============== جعل الدوال متاحة عالمياً ===============
+        window.openFullImageViewer = openFullImageViewer;
+        window.editTitle = editTitle;
+        window.deleteTitle = deleteTitle;
+              window.selectImportType = selectImportType;
+        window.openFileInput = openFileInput;
+        window.selectFile = selectFile;
+        window.removePdfFile = removePdfFile;
+        window.removeFile = removeFile;
+        window.displayHomeworkFromList = displayHomeworkFromList;
+        window.closeEditModal = closeEditModal;
+        window.saveTitleEdits = saveTitleEdits;
+        window.addNotebookPages = addNotebookPages;
+        window.removePage = removePage;
+        window.addAdditionalImages = addAdditionalImages;
+        window.removeAdditionalImage = removeAdditionalImage;
+        window.addVideo = addVideo;
+        window.removeVideo = removeVideo;
+        window.importLessonFromFile = importLessonFromFile;
+        window.saveNotebookAsFile = saveNotebookAsFile;
+        window.saveCurrentNotebookAsJson = saveCurrentNotebookAsJson;
+        window.clearAllData = clearAllData;
+        window.saveLessonAsFile = saveLessonAsFile;
+        window.selectTitle = selectTitle;
+        // =========== فرض تثبيت شريط المعلومات ===========
+window.addEventListener('load', function() {
+    const sectionInfo = document.getElementById('sectionInfoSticky');
+    if (sectionInfo) {
+        sectionInfo.style.position = 'sticky';
+        sectionInfo.style.top = '73px';
+        sectionInfo.style.zIndex = '9999';
+        console.log('✅ شريط المعلومات مثبت بالقوة');
+    }
+});
+
+// راقب أي تغيير قد يؤثر على الشريط
+const observer = new MutationObserver(function() {
+    const sectionInfo = document.getElementById('sectionInfoSticky');
+    if (sectionInfo && sectionInfo.style.position !== 'sticky') {
+        sectionInfo.style.position = 'sticky';
+        sectionInfo.style.top = '73px';
+    }
+});
+
+observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['style', 'class']
+});
+// =============== دالة القفز إلى رقم الصفحة ===============
+// =============== دالة القفز إلى رقم الصفحة (تدعم أي رقم) ===============
+function jumpToPage() {
+    const input = document.getElementById('pageNumberInput');
+    let pageNumber = parseInt(input.value);
+    
+    if (isNaN(pageNumber) || pageNumber < 1) {
+        showStatusMessage('الرجاء إدخال رقم صفحة صحيح', 'warning');
+        return;
+    }
+    
+    // البحث في منطقة عرض كراس الأنشطة
+    const displayElement = document.getElementById('notebookImagesDisplay');
+    if (!displayElement) {
+        showStatusMessage('لم يتم العثور على منطقة عرض الصور', 'error');
+        return;
+    }
+    
+    // البحث عن الصورة المطلوبة
+    const allImages = displayElement.querySelectorAll('img');
+    let targetImage = null;
+    
+    for (let i = 0; i < allImages.length; i++) {
+        const img = allImages[i];
+        const parent = img.closest('.image-full-item, .media-item');
+        const parentText = parent ? (parent.innerText || parent.textContent) : '';
+        
+        // استخراج رقم الصفحة
+        const match = parentText.match(/(?:صفحة|Page)\s*(\d+)/i);
+        if (match && parseInt(match[1]) === pageNumber) {
+            targetImage = parent || img;
+            break;
+        }
+    }
+    
+    if (targetImage) {
+        targetImage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // تمييز مؤقت
+        targetImage.style.transition = 'all 0.3s';
+        targetImage.style.boxShadow = '0 0 0 3px #3498db';
+        setTimeout(() => {
+            targetImage.style.boxShadow = '';
+        }, 2000);
+        
+        showStatusMessage(`✅ تم الانتقال إلى الصفحة ${pageNumber}`, 'success');
+        input.value = '';
+    } else {
+        showStatusMessage(`❌ لم يتم العثور على الصفحة ${pageNumber}`, 'error');
+    }
+}
+
+// دعم Enter
+document.addEventListener('DOMContentLoaded', function() {
+    const pageInput = document.getElementById('pageNumberInput');
+    if (pageInput) {
+        pageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                jumpToPage();
+            }
+        });
+    }
+});
+    </script>
+</body>
+</html>
+    
